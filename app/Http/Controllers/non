@@ -1,0 +1,64 @@
+public function store(Request $request)
+    {
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Unauthorized access');
+        }
+
+        if($request->transcript_type){
+            $request->validate([
+                'transcript_type' => 'required',
+                'number_of_copies' => 'required|numeric|min:1',
+                'file' => 'required|mimes:pdf|max:2048',
+            ]);
+    
+            $transcriptAmount = RequestType::where(
+                'requesttype', $request->transcript_type,
+            )->first();
+    
+            $cartItem = [
+                'matric' => auth()->user()->matric,
+                'request' => $request->transcript_type,
+                'num_copies' => $request->number_of_copies,
+                'fee' => $transcriptAmount['amount'], 
+                'degree' => $transcriptAmount['amount'], 
+                'address' => $transcriptAmount['amount'] 
+            ];
+            
+            Cart::create($cartItem);
+            $request->file->store('transcript_files');
+        session()->push('cart', $cartItem);
+        }
+            
+        $request->validate([
+            'faculty' => 'required',
+            'department' => 'required',
+            'degree' => 'required',
+            'field_of_interest' => 'required'
+        ]);
+
+        $prevApp = PrevApp::where('matric', auth()->user()->matric)->first();
+            if (!$prevApp) {
+                return response()->json(['error' => 'User not found in prev_app table.'], 404);
+            }
+            $user_id = $prevApp->user_id;
+            $zmain = ZmainApp::where('user_id', $user_id)->get('user_id');
+
+            if (!$zmain) {
+
+                return response()->json(['error' => 'User not found in zmain_app table.'], 404);
+
+                $zmainData = [
+                    'user_id' => $user_id,
+                    'faculty' => $request->faculty,
+                    'department' => $request->department,
+                    'degree' => $request->degree,
+                    'field_of_interest' => $request->field,
+                ];
+        
+                ZmainApp::create($zmainData);
+
+            }
+
+
+        return Redirect::to('cart');
+    }

@@ -1,0 +1,67 @@
+.logo{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .text-bold {
+    font-weight:bolder !important;
+    color: #fff !important;
+    stroke: red !important;
+  }
+  
+  #nav1{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    background: #fff;
+
+    
+    
+}
+
+.navbar{
+
+ width: 100%;
+ padding-left: 7rem;
+}
+.cart:hover{
+  color: #fff !important;
+  background: #0a2b4f !important;
+}
+.cart{
+  background: none;
+  padding: 0.3rem;
+  margin-right: 10px;
+  border: 2px solid #0a2b4f;
+  border-radius: 5px;
+
+  display: flex;
+  align-self: center;
+  color: #0a2b4f;
+}
+.logout{
+  background: #dc3545;
+  padding: 0.5rem;
+  margin-right: 10px;
+  border-radius: 5px;
+  display: flex;
+  align-self: center;
+  border: #dc3545;
+  color: #fff;
+}
+@media (max-width: 991.98px) {
+  .navbar{
+margin-top: 4rem;
+padding-left: 1.75rem !important;
+   }
+}
+
+@media (max-width: 767.98px) {
+  .navbar h1{
+    font-size: 0.75rem;
+  }
+}
