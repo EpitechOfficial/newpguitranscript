@@ -838,6 +838,10 @@ public function updateCheque(Request $request)
                 'status' => 8,
             ]);
 
+            // $pdfTranscript = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.partials.transcript_main', $data)->output();
+            // $pdfLetter = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.partials.transcript_letter', $data)->output();
+          
+
             return redirect()->route('admin.recordProcesseds')->with('success', 'Transcript Approved Successfully.');
         } catch (\Exception $e) {
             Log::error('Error submitting approve transcript: ' . $e->getMessage());

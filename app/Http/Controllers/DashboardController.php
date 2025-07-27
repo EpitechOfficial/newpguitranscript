@@ -22,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 
 
@@ -843,7 +844,13 @@ public function updateCheque(Request $request)
         $sessionAdmin = $request->input('sessionadmin');
         $sessiongrad = $request->input('sessiongrad');
 
-        $transDetails = TransDetailsNew::where('matric', $matric)
+        $transDetails = TransDetailsNew::with([
+            'transInvoice' => function ($query) { 
+                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+            }, 
+            'transDetailsFiles:id,trans_details_id,file_path'
+        ])
+        ->where('matric', $matric)
         ->where('sessionadmin', $sessionAdmin)
         ->first();
 
@@ -867,7 +874,15 @@ public function updateCheque(Request $request)
                 }
                 $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
 
-                $transDetails = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                $transDetails = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
                 Log::info('biodata: ' . $biodata);
                 Log::info('transDetails: ' . $transDetails);
                 $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
@@ -888,7 +903,15 @@ public function updateCheque(Request $request)
                 if ($results->isEmpty()) {
                     // If Result2023 is empty, fallback to Result2018
                     //$biodata = Biodata::where('matric', $matric)->first();
-                    $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                    $biodata = TransDetailsNew::with([
+                        'transInvoice' => function ($query) { 
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                        }, 
+                        'transDetailsFiles:id,trans_details_id,file_path'
+                    ])
+                    ->where('matric', $matric)
+                    ->where('sessionadmin', $sessionAdmin)
+                    ->first();
 
 
                     // Try fetching from Result2018 first
@@ -907,7 +930,15 @@ public function updateCheque(Request $request)
             } elseif ($startYear >= 2018 && $startYear <= 2022) {
                 // **2018/2019 and above: Use Result2018**
                 //$biodata = Biodata::where('matric', $matric)->first();
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                $biodata = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
 
                 $results = Result2018::with('course')
                     ->where('stud_id', $matric)
@@ -920,7 +951,15 @@ Log::info('Biodata: ' . $biodata);
 
             } elseif ($startYear >= 2013 && $startYear <= 2017) {
                 // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                $biodata = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
 
                 $results = Result2018::where('stud_id', $matric)
                 ->where('sec', $sessionAdmin)
@@ -930,9 +969,15 @@ Log::info('Biodata: ' . $biodata);
 
                 if ($results->isEmpty() || !$biodata) {
                     // If Result2018 is empty, fallback to ResultOld
-                    $biodata = TransDetailsNew::where('matric', $matric)
-                        ->where('sessionadmin', $sessionAdmin)
-                        ->first();
+                    $biodata = TransDetailsNew::with([
+                        'transInvoice' => function ($query) { 
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                        }, 
+                        'transDetailsFiles:id,trans_details_id,file_path'
+                    ])
+                    ->where('matric', $matric)
+                    ->where('sessionadmin', $sessionAdmin)
+                    ->first();
 
                     $results = ResultOld::where('matno', $matric)
                         ->where('sec', $sessionAdmin)
@@ -951,9 +996,15 @@ Log::info('Biodata: ' . $biodata);
 
             } else {
                 // **Older than 2013: Use ResultOld**
-                $biodata = TransDetailsNew::where('matric', $matric)
-                    ->where('sessionadmin', $sessionAdmin)
-                    ->first();
+                $biodata = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
 
                 $results = ResultOld::where('matno', $matric)
                     ->where('sec', $sessionAdmin)
@@ -1001,6 +1052,8 @@ Log::info('Biodata: ' . $biodata);
         }
 
     }
+
+
 
     public function submitForApproval(Request $request)
     {
@@ -1071,6 +1124,22 @@ Log::info('Biodata: ' . $biodata);
             $transcript->update([
                 'status' => 8,
             ]);
+
+            // Send transcript email if email is available
+            $courier = Courier::where('appno', $request->matric)->first();
+            $destinationEmail = $courier->email ?? $transcript->email;
+            
+            if ($destinationEmail) {
+                try {
+                    $this->sendTranscriptEmailOnApproval($transcript);
+                    Log::info("Transcript email sent successfully to: " . $destinationEmail);
+                } catch (\Exception $e) {
+                    Log::error("Failed to send transcript email: " . $e->getMessage());
+                    // Don't fail the approval process if email fails
+                }
+            } else {
+                Log::warning("No email address found for transcript approval. Matric: " . $request->matric);
+            }
 
             return redirect()->route('admin.recordProcesseds')->with('success', 'Transcript Approved Successfully.');
         } catch (\Exception $e) {
@@ -1341,5 +1410,165 @@ Log::info('Biodata: ' . $biodata);
     public function destroy(string $id)
     {
         //
+    }
+
+    private function sendTranscriptEmailOnApproval($transcript)
+    {
+        $matric = $transcript->matric;
+        $sessionAdmin = $transcript->sessionadmin;
+        
+        // Get courier information for destination email
+        $courier = Courier::where('appno', $matric)->first();
+        $destinationEmail = $courier->email ?? $transcript->email;
+
+        $transDetails = TransDetailsNew::with([
+            'transInvoice' => function ($query) { 
+                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+            }, 
+            'transDetailsFiles:id,trans_details_id,file_path'
+        ])
+        ->where('matric', $matric)
+        ->where('sessionadmin', $sessionAdmin)
+        ->first();
+
+        $cgpa = $transDetails->award;
+        $degreeAwarded = $transDetails->programme;
+        $dateAward = $transDetails->dateAward;
+        $gender = $transDetails->sex ?? 'N/A';
+
+        Log::info("Sending transcript email for matric: $matric, sessionAdmin: $sessionAdmin, to: $destinationEmail");
+
+        if (preg_match('/^(\d{4})\/(\d{4})$/', $sessionAdmin, $matches)) {
+            $startYear = intval($matches[1]);
+            $endYear = intval($matches[2]);
+
+            if ($startYear >= 2023) {
+                // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
+                $biodata = StudentRecord::where('matric', $matric)->first();
+                if (!$biodata) {
+                    Log::error('No StudentRecord found for matric: ' . $matric);
+                }
+                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
+
+                $transDetails = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
+                
+                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
+
+                $results = Result2023::with('course')
+                ->with(['faculty', 'department'])
+                    ->select('*')
+                    ->where('matric', $matric)
+                    ->where('yr_of_entry', $normalizedSecAdmin)
+                    ->get()
+                    ->makeHidden(['status']);
+
+                if ($results->isEmpty()) {
+                    $biodata = TransDetailsNew::with([
+                        'transInvoice' => function ($query) { 
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                        }, 
+                        'transDetailsFiles:id,trans_details_id,file_path'
+                    ])
+                    ->where('matric', $matric)
+                    ->where('sessionadmin', $sessionAdmin)
+                    ->first();
+
+                    $results = Result2018::with('course')
+                        ->where('stud_id', $matric)
+                        ->where('sec', $sessionAdmin)
+                        ->get();
+                }
+
+            } elseif ($startYear >= 2018 && $startYear <= 2022) {
+                // **2018/2019 and above: Use Result2018**
+                $biodata = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
+
+                $results = Result2018::with('course')
+                    ->where('stud_id', $matric)
+                    ->where('sec', $sessionAdmin)
+                    ->get();
+
+            } elseif ($startYear >= 2013 && $startYear <= 2017) {
+                // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
+                $biodata = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
+
+                $results = Result2018::where('stud_id', $matric)
+                ->where('sec', $sessionAdmin)
+                ->with('course')
+                ->get();
+
+                if ($results->isEmpty() || !$biodata) {
+                    $biodata = TransDetailsNew::with([
+                        'transInvoice' => function ($query) { 
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                        }, 
+                        'transDetailsFiles:id,trans_details_id,file_path'
+                    ])
+                    ->where('matric', $matric)
+                    ->where('sessionadmin', $sessionAdmin)
+                    ->first();
+
+                    $results = ResultOld::where('matno', $matric)
+                        ->where('sec', $sessionAdmin)
+                        ->with('course')
+                        ->get();
+                }
+
+            } else {
+                // **Older than 2013: Use ResultOld**
+                $biodata = TransDetailsNew::with([
+                    'transInvoice' => function ($query) { 
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); 
+                    }, 
+                    'transDetailsFiles:id,trans_details_id,file_path'
+                ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
+
+                $results = ResultOld::where('matno', $matric)
+                    ->where('sec', $sessionAdmin)
+                    ->with('course')
+                    ->get();
+            }
+
+            // Prepare data for PDF generation
+            $data = compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender');
+
+            // Generate PDFs
+            $pdfTranscript = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.partials.transcript_main', $data)->output();
+            $pdfLetter = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.partials.transcript_letter', $data)->output();
+
+            // Send email
+            Mail::to($destinationEmail)->send(new \App\Mail\TranscriptMail($data, $pdfTranscript, $pdfLetter));
+            
+        } else {
+            Log::info('Invalid session format for email sending');
+            throw new \Exception('Invalid session format');
+        }
     }
 }

@@ -103,7 +103,7 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
 
  Route::get('/edit-transcript-realtime', [ResultOldController::class, 'editTranscriptRealtimePage'])->name('edit_transcript_realtime');
     Route::get('/edit-transcript-realtime/fetch', [ResultOldController::class, 'fetchTranscriptRealtime'])->name('edit_transcript_realtime.fetch');
-    Route::post('/edit-transcript-realtime/update', [ResultOldController::class, 'updateTranscriptRealtime'])->name('edit_transcript_realtime.update');
+    // Route::post('/edit-transcript-realtime/update', [ResultOldController::class, 'updateTranscriptRealtime'])->name('edit_transcript_realtime.update');
     Route::post('/edit-transcript-realtime/save', [ResultOldController::class, 'saveTranscriptRealtime'])->name('edit_transcript_realtime.save');
     Route::get('/transcript/details/{id}', [AdminLoginController::class, 'transcriptDetails'])->name('transcript.details');
 
