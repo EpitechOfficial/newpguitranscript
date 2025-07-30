@@ -29,7 +29,9 @@ class TransDetailsNew extends Model
         'programme',
         'feildofinterest',
         'email',
-        'status'
+        'status',
+        'ecopy_email',
+        'ecopy_address',
     ];
 
     public $timestamps = false;

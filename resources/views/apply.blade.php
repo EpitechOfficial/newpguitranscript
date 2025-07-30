@@ -9,6 +9,12 @@
         #maiden_name {
             color: #000000 !important;
         } .mt-10{margin-top: 1rem}
+        .dispatch-fields {
+            display: block;
+        }
+        .ecopy-fields {
+            display: none;
+        }
     </style>
     <div class="container">
         <!-- Title and Top Buttons Start -->
@@ -196,9 +202,11 @@
                                         <option value="5">Five (5)</option>
                                     </select>
                                 </div>
-                                <div class="col form-group">
+                                
+                                <!-- Dispatch Mode - Hidden for E-copy -->
+                                <div class="col form-group dispatch-fields">
                                     <label for="dispatch_mode">Dispatch Mode</label>
-                                    <select id="dispatch_mode" name="dispatch_mode" class="form-control" required>
+                                    <select id="dispatch_mode" name="dispatch_mode" class="form-control">
                                         <option value="">Select Dispatch Mode</option>
                                         <option value="DHL">DHL</option>
                                         <option value="UPS">UPS</option>
@@ -206,16 +214,15 @@
                                     </select>
                                 </div>
 
-
                             </div>
                         </div>
-                        <div class="mt-10 col-md-12">
-
+                        
+                        <!-- Dispatch Fields - Hidden for E-copy -->
+                        <div class="mt-10 col-md-12 dispatch-fields">
                             <div class="row w-full w-100">
                                 <div class="col form-group">
                                     <label for="dispatch_country">Dispatch Country</label>
-                                    <select id="dispatch_country" name="dispatch_country" class="form-control"
-                                        required>
+                                    <select id="dispatch_country" name="dispatch_country" class="form-control">
                                         <option value="">Select Country</option>
                                         @foreach (['Nigeria', 'United States', 'United Kingdom', 'Canada', 'Germany', 'France', 'India', 'China', 'South Africa', 'Ghana', 'Kenya', 'Australia', 'Other'] as $country)
                                             <option value="{{ $country }}">{{ $country }}</option>
@@ -223,17 +230,34 @@
                                     </select>
                                 </div>
                                 <div class="col form-group">
-                                    <label for="destination_address">Destination Address/Email for E-copy</label>
+                                    <label for="destination_address">Destination Address</label>
                                     <input type="text" id="destination_address" name="destination_address"
-                                        class="form-control" required placeholder="Enter address or email for e-copy">
+                                        class="form-control" placeholder="Enter destination address">
                                 </div>
                                 <div class="col form-group">
                                     <label for="destination2">Destination 2 (optional)</label>
                                     <input type="text" id="destination2" name="destination2" class="form-control"
-                                        placeholder="Enter second address/email (optional)">
+                                        placeholder="Enter second address (optional)">
                                 </div>
                             </div>
                         </div>
+
+                        <!-- E-copy Fields - Shown only for E-copy -->
+                        <div class="mt-10 col-md-12 ecopy-fields">
+                            <div class="row w-full w-100">
+                                <div class="col form-group">
+                                    <label for="ecopy_email">E-copy Email</label>
+                                    <input type="email" id="ecopy_email" name="ecopy_email" class="form-control"
+                                        placeholder="Enter email for e-copy delivery">
+                                </div>
+                                <div class="col form-group">
+                                    <label for="ecopy_address">E-copy Address</label>
+                                    <input type="text" id="ecopy_address" name="ecopy_address" class="form-control"
+                                        placeholder="Enter address for e-copy reference">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="mt-10 col-md-12">
 
                             <div class="row w-full w-100">
@@ -269,6 +293,43 @@
 
      <script type="text/javascript">
         $(document).ready(function() {
+            // Function to toggle fields based on transcript type
+            function toggleFieldsBasedOnTranscriptType(transcriptType) {
+                var isEcopy = transcriptType && transcriptType.toLowerCase().includes('e-copy');
+                
+                if (isEcopy) {
+                    // Hide dispatch fields and show e-copy fields
+                    $('.dispatch-fields').hide();
+                    $('.ecopy-fields').show();
+                    
+                    // Remove required attribute from dispatch fields
+                    $('#dispatch_mode, #dispatch_country, #destination_address').removeAttr('required');
+                    
+                    // Add required attribute to e-copy fields
+                    $('#ecopy_email').attr('required', true);
+                } else {
+                    // Show dispatch fields and hide e-copy fields
+                    $('.dispatch-fields').show();
+                    $('.ecopy-fields').hide();
+                    
+                    // Add required attribute to dispatch fields
+                    $('#dispatch_mode, #dispatch_country, #destination_address').attr('required', true);
+                    
+                    // Remove required attribute from e-copy fields
+                    $('#ecopy_email').removeAttr('required');
+                }
+            }
+
+            // Handle transcript type change
+            $('#transcript_type').on('change', function() {
+                var transcriptType = this.value;
+                toggleFieldsBasedOnTranscriptType(transcriptType);
+                setDispatchCountryOptions(transcriptType);
+            });
+
+            // Initialize on page load
+            toggleFieldsBasedOnTranscriptType($('#transcript_type').val());
+
             $('#faculty').on('change', function() {
                 var facultyId = this.value;
                 $('#department').html('<option value="">Select Department</option>');
@@ -327,12 +388,11 @@
                 }
             });
 
-
             var allCountries = [
                 'Nigeria', 'United States', 'United Kingdom', 'Canada', 'Germany', 'France', 'India', 'China', 'South Africa', 'Ghana', 'Kenya', 'Australia', 'Other'
             ];
             var $dispatchCountry = $('#dispatch_country');
-            var $transcriptType = $('#transcript_type');
+            
             function setDispatchCountryOptions(type) {
                 if (type === 'Transcript Within Nigeria') {
                     $dispatchCountry.html('<option value="Nigeria">Nigeria</option>');
@@ -343,73 +403,9 @@
                     });
                 }
             }
-            $transcriptType.on('change', function() {
-                setDispatchCountryOptions(this.value);
-            });
 
-            setDispatchCountryOptions($transcriptType.val());
+            setDispatchCountryOptions($('#transcript_type').val());
         });
     </script>
-    {{-- <script type="text/javascript">
-        $(document).ready(function() {
-            $('#faculty').on('change', function() {
-                var facultyId = this.value;
-                $('#department').html('<option value="">Select Department</option>');
-                $('#degree').html('<option value="">Select Degree</option>');
-                $('#field').html('<option value="">Select Specialization</option>');
-                if (facultyId) {
-                    $.ajax({
-                        url: '/get-departments/' + facultyId,
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(data) {
-                            $.each(data, function(key, value) {
-                                $('#department').append('<option value="' + value.id +
-                                    '">' + value.department + '</option>');
-                            });
-                        }
-                    });
-                }
-            });
-
-            $('#department').on('change', function() {
-                var departmentId = this.value;
-                $('#degree').html('<option value="">Select Degree</option>');
-                $('#field').html('<option value="">Select Specialization</option>');
-                if (departmentId) {
-                    $.ajax({
-                        url: '/get-degrees/' + departmentId,
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(data) {
-                            $.each(data, function(key, value) {
-                                $('#degree').append('<option value="' + value.id +
-                                    '">' + value.degree + '</option>');
-                            });
-                        }
-                    });
-                }
-            });
-
-            $('#degree').on('change', function() {
-                var degreeId = this.value;
-                var departmentId = $('#department').val();
-                $('#field').html('<option value="">Select Specialization</option>');
-                if (degreeId && departmentId) {
-                    $.ajax({
-                        url: '/get-specializations/' + degreeId + '/' + departmentId,
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(data) {
-                            $.each(data, function(key, value) {
-                                $('#field').append('<option value="' + value.id + '">' +
-                                    value.field_title + '</option>');
-                            });
-                        }
-                    });
-                }
-            });
-        });
-    </script> --}}
 
 </x-app-layout>

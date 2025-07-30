@@ -36,6 +36,8 @@
     <!-- Template Base Styles Start -->
     <link rel="stylesheet" href="{{ asset('css/styles.css') }}" />
     <!-- Template Base Styles End -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css">
 
     <style>
         .no-arrow{

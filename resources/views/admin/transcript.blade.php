@@ -159,7 +159,7 @@
                             <p><strong>Gender:</strong> {{ $gender ?? ($biodata->sex ?? 'N/A') }}</p>
                             <p><strong>Matric Number:</strong> {{ $biodata->matric ?? 'N/A' }}</p>
                             <p><strong>Session Admitted:</strong>
-                                {{ $biodata->sessionadmin ?? ($results->first()->sec ?? 'N/A') }}
+                                {{ $biodata->sessionadmin ?? ($results->first()->sec ?? $results->first()->yr_of_entry) }}
                             </p>
                             <p><strong>Faculty:</strong>
                                 {{ $biodata->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}
@@ -246,7 +246,7 @@
                     @endif
 
                     <input type="hidden" name="secAdmin"
-                        value="{{ optional($biodata)->sessionadmin ?? (optional($results->first())->sec ?? '') }}">
+                        value="{{ optional($biodata)->sessionadmin ?? (optional($results->first())->sec ?? optional($results->first())->yr_of_entry) }}">
 
                     <input type="hidden" name="cgpa" id="cgpaInput">
                     <input type="hidden" name="degreeAward" id="degreeAwardInput">

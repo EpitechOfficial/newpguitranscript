@@ -174,17 +174,17 @@
                                                 <td>
                                                     <div class="d-flex gap-2 justify-content-center">
                                                         <button class="btn btn-primary btn-sm w-auto text-nowrap"
-                                                        data-matric="{{ $record->matric }}"
-                                                        data-sessionadmin="{{ $record->sessionadmin }}"
-                                                        onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}')">
-                                                        View Transcript
-                                                    </button>
+                                                            data-matric="{{ $record->matric }}"
+                                                            data-sessionadmin="{{ $record->sessionadmin }}"
+                                                            onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}')">
+                                                            View Transcript
+                                                        </button>
 
 
                                                         <button class="btn btn-success btn-sm"
                                                             data-matric="{{ $record->matric }}"
                                                             data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="approveRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}')">
+                                                            onclick="approveRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}','{{ $record->ecopy_email }}')">
                                                             Approve
                                                         </button>
                                                         <button class="btn btn-danger btn-sm"
@@ -260,152 +260,207 @@
                 </div>
 
 
-  <script>
-        function processTranscript(button, matric, sessionadmin) {
-            console.log("Processing record for:", matric, sessionadmin); // Debugging log
+                <script>
+                    function processTranscript(button, matric, sessionadmin) {
+                        console.log("Processing record for:", matric, sessionadmin); // Debugging log
 
-            button.disabled = true;
-            button.innerHTML =
-                `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
-            const url = '{{ route('admin.processTranscript') }}'; // Named route for the backend action
+                        button.disabled = true;
+                        button.innerHTML =
+                            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
+                        const url = '{{ route('admin.processTranscript') }}'; // Named route for the backend action
 
-            // Create a form dynamically to submit via POST
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = url;
+                        // Create a form dynamically to submit via POST
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = url;
 
-            // Add CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = '_token';
-            csrfInput.value = csrfToken;
-            form.appendChild(csrfInput);
+                        // Add CSRF token
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = csrfToken;
+                        form.appendChild(csrfInput);
 
-            // Add matric and sessionadmin values
-            const matricInput = document.createElement('input');
-            matricInput.type = 'hidden';
-            matricInput.name = 'matric';
-            matricInput.value = matric;
-            form.appendChild(matricInput);
+                        // Add matric and sessionadmin values
+                        const matricInput = document.createElement('input');
+                        matricInput.type = 'hidden';
+                        matricInput.name = 'matric';
+                        matricInput.value = matric;
+                        form.appendChild(matricInput);
 
-            const sessionAdminInput = document.createElement('input');
-            sessionAdminInput.type = 'hidden';
-            sessionAdminInput.name = 'sessionadmin';
-            sessionAdminInput.value = sessionadmin;
-            form.appendChild(sessionAdminInput);
+                        const sessionAdminInput = document.createElement('input');
+                        sessionAdminInput.type = 'hidden';
+                        sessionAdminInput.name = 'sessionadmin';
+                        sessionAdminInput.value = sessionadmin;
+                        form.appendChild(sessionAdminInput);
 
-            console.log("Submitting form to:", url); // Debugging log
+                        console.log("Submitting form to:", url); // Debugging log
 
-            // Append form to the body and submit it
-            document.body.appendChild(form);
-            form.submit();
-
-
-        }
-
-        // window.addEventListener("pageshow", function() {
-        //     document.querySelectorAll(".btn-success").forEach((button) => {
-        //         button.disabled = false;
-        //         button.innerHTML = "View Transcript";
-        //     });
-        // });
+                        // Append form to the body and submit it
+                        document.body.appendChild(form);
+                        form.submit();
 
 
-        $(document).ready(function() {
-            $('#recordsTable').DataTable({
-                responsive: true, // Enables responsive layout
-                paging: true, // Enables pagination
-                searching: true, // Enables searching
-                ordering: true // Enables column sorting
-            });
-        });
-    </script>
+                    }
+
+                    // window.addEventListener("pageshow", function() {
+                    //     document.querySelectorAll(".btn-success").forEach((button) => {
+                    //         button.disabled = false;
+                    //         button.innerHTML = "View Transcript";
+                    //     });
+                    // });
+
+
+                    $(document).ready(function() {
+                        $('#recordsTable').DataTable({
+                            responsive: true, // Enables responsive layout
+                            paging: true, // Enables pagination
+                            searching: true, // Enables searching
+                            ordering: true // Enables column sorting
+                        });
+                    });
+                </script>
 
 
                 <script>
-                    function approveRecord(button, matric, sessionadmin) {
-                        console.log("Processing record for:", matric, sessionadmin); // Debugging log
+                    function approveRecord(button, matric, sessionadmin, ecopy_email) {
+                        console.log("Processing record for:", matric, sessionadmin);
 
-                        button.disabled = true;
-                        button.innerHTML =
-                            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
+                        const confirmationText = ecopy_email ?
+                            `Are you sure you want to approve the transcript for student ${matric}? Note: An email will be sent to ${ecopy_email} with the transcript.` :
+                            `Are you sure you want to approve the transcript for student ${matric}?`;
+                        // Show SweetAlert confirmation dialog
+                        Swal.fire({
+                            title: 'Confirm Approval',
+                            text: confirmationText,
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#28a745',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, approve it!',
+                            cancelButtonText: 'Cancel',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // User confirmed, proceed with approval
+                                button.disabled = true;
+                                button.innerHTML =
+                                    `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
 
-                        const url = '{{ route('admin.transcriptApprove') }}'; // Named route for the backend action
+                                const url = '{{ route('admin.transcriptApprove') }}';
 
-                        // Create a form dynamically to submit via POST
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = url;
+                                // Create a form dynamically to submit via POST
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = url;
 
-                        // Add CSRF token
-                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = '_token';
-                        csrfInput.value = csrfToken;
-                        form.appendChild(csrfInput);
+                                // Add CSRF token
+                                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                const csrfInput = document.createElement('input');
+                                csrfInput.type = 'hidden';
+                                csrfInput.name = '_token';
+                                csrfInput.value = csrfToken;
+                                form.appendChild(csrfInput);
 
-                        // Add matric and sessionadmin values
-                        const matricInput = document.createElement('input');
-                        matricInput.type = 'hidden';
-                        matricInput.name = 'matric';
-                        matricInput.value = matric;
-                        form.appendChild(matricInput);
+                                // Add matric and sessionadmin values
+                                const matricInput = document.createElement('input');
+                                matricInput.type = 'hidden';
+                                matricInput.name = 'matric';
+                                matricInput.value = matric;
+                                form.appendChild(matricInput);
 
-                        const sessionAdminInput = document.createElement('input');
-                        sessionAdminInput.type = 'hidden';
-                        sessionAdminInput.name = 'sessionadmin';
-                        sessionAdminInput.value = sessionadmin;
-                        form.appendChild(sessionAdminInput);
+                                const sessionAdminInput = document.createElement('input');
+                                sessionAdminInput.type = 'hidden';
+                                sessionAdminInput.name = 'sessionadmin';
+                                sessionAdminInput.value = sessionadmin;
+                                form.appendChild(sessionAdminInput);
 
-                        console.log("Submitting form to:", url); // Debugging log
+                                console.log("Submitting form to:", url);
 
-                        // Append form to the body and submit it
-                        document.body.appendChild(form);
-                        form.submit();
+                                // Append form to the body and submit it
+                                document.body.appendChild(form);
+                                form.submit();
+
+                                // Show success message (optional)
+                                Swal.fire({
+                                    title: 'Processing...',
+                                    text: 'Transcript approval is being processed.',
+                                    icon: 'info',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                            // If user cancels, do nothing - button remains enabled
+                        });
                     }
 
                     function rejectRecord(button, matric, sessionadmin) {
-                        console.log("Processing record for:", matric, sessionadmin); // Debugging log
+                        console.log("Processing record for:", matric, sessionadmin);
 
-                        button.disabled = true;
-                        button.innerHTML =
-                            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
+                        // Show SweetAlert confirmation dialog for rejection
+                        Swal.fire({
+                            title: 'Confirm Rejection',
+                            text: `Are you sure you want to reject the transcript for student ${matric}?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, reject it!',
+                            cancelButtonText: 'Cancel',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // User confirmed, proceed with rejection
+                                button.disabled = true;
+                                button.innerHTML =
+                                    `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
 
-                        const url = '{{ route('admin.transcriptReject') }}'; // Named route for the backend action
+                                const url = '{{ route('admin.transcriptReject') }}';
 
-                        // Create a form dynamically to submit via POST
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = url;
+                                // Create a form dynamically to submit via POST
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = url;
 
-                        // Add CSRF token
-                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = '_token';
-                        csrfInput.value = csrfToken;
-                        form.appendChild(csrfInput);
+                                // Add CSRF token
+                                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                const csrfInput = document.createElement('input');
+                                csrfInput.type = 'hidden';
+                                csrfInput.name = '_token';
+                                csrfInput.value = csrfToken;
+                                form.appendChild(csrfInput);
 
-                        // Add matric and sessionadmin values
-                        const matricInput = document.createElement('input');
-                        matricInput.type = 'hidden';
-                        matricInput.name = 'matric';
-                        matricInput.value = matric;
-                        form.appendChild(matricInput);
+                                // Add matric and sessionadmin values
+                                const matricInput = document.createElement('input');
+                                matricInput.type = 'hidden';
+                                matricInput.name = 'matric';
+                                matricInput.value = matric;
+                                form.appendChild(matricInput);
 
-                        const sessionAdminInput = document.createElement('input');
-                        sessionAdminInput.type = 'hidden';
-                        sessionAdminInput.name = 'sessionadmin';
-                        sessionAdminInput.value = sessionadmin;
-                        form.appendChild(sessionAdminInput);
+                                const sessionAdminInput = document.createElement('input');
+                                sessionAdminInput.type = 'hidden';
+                                sessionAdminInput.name = 'sessionadmin';
+                                sessionAdminInput.value = sessionadmin;
+                                form.appendChild(sessionAdminInput);
 
-                        console.log("Submitting form to:", url); // Debugging log
+                                console.log("Submitting form to:", url);
 
-                        // Append form to the body and submit it
-                        document.body.appendChild(form);
-                        form.submit();
+                                // Append form to the body and submit it
+                                document.body.appendChild(form);
+                                form.submit();
+
+                                // Show processing message (optional)
+                                Swal.fire({
+                                    title: 'Processing...',
+                                    text: 'Transcript rejection is being processed.',
+                                    icon: 'info',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                            // If user cancels, do nothing - button remains enabled
+                        });
                     }
 
                     // window.addEventListener("pageshow", function() {
