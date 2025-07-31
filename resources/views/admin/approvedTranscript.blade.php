@@ -9,7 +9,7 @@
     <meta name="author" content="Laralink">
     <!-- Site Title -->
     <title>Transcript Application | Invoices</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     <style>
         body,
         html {
@@ -466,10 +466,10 @@
         </div>
     </div>
     </div>
-    <script src="../assets/js/jquery.min.js"></script>
-    <script src="../assets/js/jspdf.min.js"></script>
-    <script src="../assets/js/html2canvas.min.js"></script>
-    <script src="../assets/js/main.js"></script>
+<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+<script src="{{ asset('assets/js/jspdf.min.js') }}"></script>
+<script src="{{ asset('assets/js/html2canvas.min.js') }}"></script>
+<script src="{{ asset('assets/js/main.js') }}"></script>
 
 
 </body>

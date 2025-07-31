@@ -224,7 +224,7 @@
                                                         data-matric="{{ $record->matric }}"
                                                         data-sessionadmin="{{ $record->sessionadmin }}"
                                                         data-sessiongrad="{{ $record->sessiongrad }}"
-                                                        onclick="processRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->sessiongrad }}')">
+                                                        onclick="processRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->sessiongrad }}', '{{ $record->email }}')">
                                                         Process
                                                     </button>
 

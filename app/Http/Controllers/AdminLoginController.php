@@ -97,6 +97,7 @@ class AdminLoginController extends Controller
             ])
             ->get();
 
+            Log::info('Admin user logged in: ' . $records);
         Session::put('admin_user', $user);
         Session::put('admin_username', $user->username);
 

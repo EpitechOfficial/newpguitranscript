@@ -67,6 +67,6 @@ public function store(Request $request)
     {
         Auth::logout();
         Session::forget('user');
-        return redirect()->route('login');
+        return redirect()->route('std.login');
     }
 }

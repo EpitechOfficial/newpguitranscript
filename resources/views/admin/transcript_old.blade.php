@@ -80,7 +80,7 @@
                             </tbody>
                         </table>
                         <hr>
-                         <p class="text-center bold"><strong>Cumulative Grade Point Average (CGPA) Score for the Degree
+                         <p class="text-center bold"><strong>Cumulative Grade Point Average (CGPA / WA) Score for the Degree
                                 of Master is</strong> <input type="number" name="cgpa" value=""
                                 class="border  p-1 px-2 w-full rounded-md"></p>
                         <div class="test">
