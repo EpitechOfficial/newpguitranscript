@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="author" content="Laralink">
     <title>Transcript Application | Details</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     <style>
         body,
         html {
@@ -119,6 +119,10 @@
                         <span>{{ $record->transInvoice->purpose ?? 'N/A' }}</span>
                         <strong>Number of Copies:</strong>
                         <span>{{ $record->transInvoice->mth ?? 'N/A' }}</span>
+                        <strong>E-Copy Destination Email:</strong>
+                        <span>{{ $ecopy->ecopy_email ?? 'N/A' }}</span>
+                        <strong>E-Copy Destination Address:</strong>
+                        <span>{{ $ecopy->ecopy_address ?? 'N/A' }}</span>
                         <strong>Dispatch Mode:</strong>
                         <span>{{ $record->courier->courier_name ?? 'N/A' }}</span>
                         <strong>Dispatch Country:</strong>
@@ -167,11 +171,10 @@
 
         </div>
     </div> --}}
-
-    <script src="../assets/js/jquery.min.js"></script>
-    <script src="../assets/js/jspdf.min.js"></script>
-    <script src="../assets/js/html2canvas.min.js"></script>
-    <script src="../assets/js/main.js"></script>
+<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+<script src="{{ asset('assets/js/jspdf.min.js') }}"></script>
+<script src="{{ asset('assets/js/html2canvas.min.js') }}"></script>
+<script src="{{ asset('assets/js/main.js') }}"></script>
 
 </body>
 </html>

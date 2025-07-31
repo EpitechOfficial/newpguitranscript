@@ -13,7 +13,7 @@ class Kernel extends ConsoleKernel
   
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('transinvoices:delete')->everyMinute();
+        $schedule->command('TransInvoices:delete')->everyMinute();
     }
     /**
      * Register the commands for the application.

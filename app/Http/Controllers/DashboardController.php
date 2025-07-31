@@ -41,7 +41,11 @@ class DashboardController extends Controller
         $matric = session('matric');
 
         $users = TransDetailsNew::where('matric', $matric)
-            ->where('status', 0)
+            ->where('status', '>=' , 0)
+            ->where('degree', '!=' ,'null')
+            ->where('department', '!=' ,'null')
+            ->where('faculty', '!=' ,'null')
+            ->where('feildofinterest', '!=' ,'null')
             ->select('faculty', 'department', 'degree', 'feildofinterest')
             ->distinct()
             ->get();
@@ -358,6 +362,11 @@ public function store(Request $request)
             ->where('matno', $matric)
             ->exists();
     }
+    if (!$matchExists) {
+        $matchExists = DB::table('testscore')
+            ->where('matric', $matric)
+            ->exists();
+    }
 
     // Update status in TransDetailsNew based on the match
     $statusToInsert = $matchExists ? 2 : 0;
@@ -583,6 +592,7 @@ public function store(Request $request)
         $matric = $request->input('matric');
         $sessionAdmin = $request->input('sessionadmin');
         $sessiongrad = $request->input('sessiongrad');
+        $invoiceNo = $request->input('invoiceNo');
 
         Log::info("Processing record for matric: $matric, sessionAdmin: $sessionAdmin,sessionGrad: $sessiongrad");
 
@@ -598,7 +608,7 @@ public function store(Request $request)
                 }
                 $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
 
-                $transDetails = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
                 Log::info('biodata: ' . $biodata);
                 Log::info('transDetails: ' . $transDetails);
                 $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
@@ -619,7 +629,7 @@ public function store(Request $request)
                 if ($results->isEmpty()) {
                     // If Result2023 is empty, fallback to Result2018
                     //$biodata = Biodata::where('matric', $matric)->first();
-                    $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                    $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
 
 
                     // Try fetching from Result2018 first
@@ -633,7 +643,7 @@ public function store(Request $request)
             } elseif ($startYear >= 2018 && $startYear <= 2022) {
                 // **2018/2019 and above: Use Result2018**
                 //$biodata = Biodata::where('matric', $matric)->first();
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
 
                 $results = Result2018::with('course')
                     ->where('stud_id', $matric)
@@ -643,7 +653,7 @@ public function store(Request $request)
                 return view('admin.transcript', compact('biodata', 'results'));
             } elseif ($startYear >= 2013 && $startYear <= 2017) {
                 // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->first();
+                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
 
                 $results = Result2018::where('stud_id', $matric)
                     ->where('sec', $sessionAdmin)
@@ -655,6 +665,7 @@ public function store(Request $request)
                     // If Result2018 is empty, fallback to ResultOld
                     $records = TransDetailsNew::where('matric', $matric)
                         ->where('sessionadmin', $sessionAdmin)
+                        ->where('email', $invoiceNo)
                         ->first();
 
                     $results = ResultOld::where('matno', $matric)
@@ -673,6 +684,7 @@ public function store(Request $request)
                 // **Older than 2013: Use ResultOld**
                 $records = TransDetailsNew::where('matric', $matric)
                     ->where('sessionadmin', $sessionAdmin)
+                    ->where('email', $invoiceNo)
                     ->first();
 
                 $results = ResultOld::where('matno', $matric)
@@ -1071,6 +1083,7 @@ public function store(Request $request)
             // Validate input
             $request->validate([
                 'matric' => 'required',
+                'invoiceNo' => 'required',
                 'secAdmin' => 'required',
                 'cgpa' => 'required|numeric|min:0',
                 'degreeAward' => 'required|string|max:255',
@@ -1081,9 +1094,11 @@ public function store(Request $request)
             $normalizedSecAdmin = preg_replace('/\/(\d{2})$/', '/20$1', $request->secAdmin);
 
             // Retrieve transcript record
-            $transcript = TransDetailsNew::where('matric', $request->matric)
+                $transcript = TransDetailsNew::where('email', $request->invoiceNo)
+                ->where('matric', $request->matric)
                 ->where('sessionadmin', $normalizedSecAdmin)
-                ->first();
+                ->firstOrFail();
+
 
             if (!$transcript) {
                 return back()->with('error', 'Transcript record not found.');

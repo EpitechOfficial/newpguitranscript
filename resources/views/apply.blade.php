@@ -292,6 +292,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
      <script type="text/javascript">
+        let baseURL = "{{ url('/') }}";
         $(document).ready(function() {
             // Function to toggle fields based on transcript type
             function toggleFieldsBasedOnTranscriptType(transcriptType) {
@@ -337,7 +338,7 @@
                 $('#field').html('<option value="">Select Specialization</option>');
                 if (facultyId) {
                     $.ajax({
-                        url: '/get-departments/' + facultyId,
+                        url: baseURL + '/get-departments/' + facultyId,
                         type: 'GET',
                         dataType: 'json',
                         success: function(data) {
@@ -356,7 +357,7 @@
                 $('#field').html('<option value="">Select Specialization</option>');
                 if (departmentId) {
                     $.ajax({
-                        url: '/get-degrees/' + departmentId,
+                        url: baseURL + '/get-degrees/' + departmentId,
                         type: 'GET',
                         dataType: 'json',
                         success: function(data) {
@@ -375,7 +376,7 @@
                 $('#field').html('<option value="">Select Specialization</option>');
                 if (degreeId && departmentId) {
                     $.ajax({
-                        url: '/get-specializations/' + degreeId + '/' + departmentId,
+                        url: baseURL + '/get-specializations/' + degreeId + '/' + departmentId,
                         type: 'GET',
                         dataType: 'json',
                         success: function(data) {

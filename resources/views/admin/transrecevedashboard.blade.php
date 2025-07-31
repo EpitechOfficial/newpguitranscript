@@ -320,6 +320,7 @@
                 </div>
 
                 <script>
+                    let baseURL = "{{ url('/') }}";
                     function updateCheque(selectElement) {
                         var selectedValue = selectElement.value;
                         var matric = selectElement.getAttribute("data-matric");
@@ -332,7 +333,7 @@
 
                         console.log('Selected Status value:', selectedValue); // Debugging line
 
-                        fetch("/admin/update-cheque", {
+                        fetch(baseURL + "/admin/update-cheque", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",

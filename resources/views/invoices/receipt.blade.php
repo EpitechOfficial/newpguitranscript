@@ -9,7 +9,7 @@
     <meta name="author" content="Laralink">
     <!-- Site Title -->
     <title>Transcript Application | Invoices</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     <style>
          th{
             color:#fff !important;
@@ -39,7 +39,7 @@
                 <div class="tm_invoice_in">
                     <div class="tm_invoice_head tm_top_head tm_mb15 tm_align_center">
                         <div class="tm_invoice_left">
-                            <div class="tm_logo"><img src="../img/logo.png" alt="Logo"></div>
+                            <div class="tm_logo"><img src="{{ asset('/img/logo.png') }}" alt="Logo"></div>
                         </div>
                         <div class="tm_invoice_right tm_text_right tm_mobile_hide">
                             <div class="tm_f50 tm_text_uppercase tm_white_color">Receipt</div>
@@ -177,10 +177,9 @@
         </div>
     </div>
     </div>
-    <script src="../assets/js/jquery.min.js"></script>
-    <script src="../assets/js/jspdf.min.js"></script>
-    <script src="../assets/js/html2canvas.min.js"></script>
-    <script src="../assets/js/main.js"></script>
-</body>
+<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+<script src="{{ asset('assets/js/jspdf.min.js') }}"></script>
+<script src="{{ asset('assets/js/html2canvas.min.js') }}"></script>
+<script src="{{ asset('assets/js/main.js') }}"></script></body>
 
 </html>

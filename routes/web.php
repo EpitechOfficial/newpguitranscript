@@ -3,7 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\TransinvoiceController;
+use App\Http\Controllers\TransInvoiceController;
 use App\Http\Controllers\GetRecordController;
 use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AdminUserController;
@@ -53,8 +53,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Cart and Transinvoice Resources
     Route::resource('cart', CartController::class);
-    Route::resource('transinvoice', TransinvoiceController::class);
-Route::get('/transreceipt/{id}', [TransinvoiceController::class, 'showReceipt'])->name('transinvoice.showReceipt');
+    Route::resource('transinvoice', TransInvoiceController::class);
+Route::get('/transreceipt/{id}', [TransInvoiceController::class, 'showReceipt'])->name('transinvoice.showReceipt');
 
     // Dynamic Record Fetching
     Route::get('/get-departments/{facultyId}', [GetRecordController::class, 'getDepartments']);
@@ -84,7 +84,7 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::get('/transrecieveDashboard', [DashboardController::class, 'transrecieveDashboard'])->name('transrecieveDashboard');
     // Route::get('/processed-record', [DashboardController::class, 'recordProcessed'])->name('recordProcessed');
     Route::get('/approved-record', [DashboardController::class, 'recordApproved'])->name('recordApproved');
-    Route::post('/logout', [AdminLoginController::class, 'destroy'])->name('adminlogout');
+    Route::post('/logout', [AdminLoginController::class, 'destroy'])->name('logout');
     Route::post('/process-record', [DashboardController::class, 'processRecord'])->name('processRecord');
     Route::post('/process-transcript', [DashboardController::class, 'processTranscript'])->name('processTranscript');
     Route::post('/view-transcript', [DashboardController::class, 'processView'])->name('processView');

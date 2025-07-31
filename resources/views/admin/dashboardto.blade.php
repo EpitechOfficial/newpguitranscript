@@ -196,7 +196,7 @@
                                                         data-copies="{{ $record->transInvoice->mth }}">
                                                         View
                                                     </button> --}}
-                                                    <a class="btn btn-primary btn-sm" href="{{ route('admin.transcript.details', ['id' => $record->id]) }}" target="_blank">View</a>
+                                                    <a class="btn btn-primary btn-sm" href="{{ route('admin.transcript.details', ['id' => $record->email]) }}" target="_blank">View</a>
                                                     {{-- <button class="btn btn-primary btn-sm" onclick="{{ route('admin.transcript.details', ['id' => $record->id]) }}">
                                                         View
                                                     </button> --}}
@@ -216,7 +216,7 @@
  <button class="btn btn-danger btn-sm"
                                                             data-matric="{{ $record->matric }}"
                                                             data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}')">
+                                                            onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->email }}')">
                                                             Reject
                                                         </button>
 
@@ -365,7 +365,7 @@
                         });
                     });
 
-                    function processRecord(button, matric, sessionadmin, sessiongrad) {
+                    function processRecord(button, matric, sessionadmin, sessiongrad,invoiceNo) {
                         console.log("Processing record for:", matric, sessionadmin,sessiongrad); // Debugging log
 
                         button.disabled = true;
@@ -404,6 +404,12 @@
                         sessiongradInput.name = 'sessiongrad';
                         sessiongradInput.value = sessiongrad;
                         form.appendChild(sessiongradInput);
+
+                        const invoiceNoInput = document.createElement('input');
+                        invoiceNoInput.type = 'hidden';
+                        invoiceNoInput.name = 'invoiceNo';
+                        invoiceNoInput.value = invoiceNo;
+                        form.appendChild(invoiceNoInput);
 
                         console.log("Submitting form to:", url); // Debugging log
 

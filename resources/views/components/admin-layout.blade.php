@@ -19,8 +19,8 @@
     <!-- Favicon Tags End -->
     <!-- Font Tags Start -->
     <!-- Bootstrap CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- Bootstrap JS (for dismissible alerts) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JS (for dismissible alerts) -->
 
     <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;700&display=swap" rel="stylesheet" />
@@ -36,15 +36,16 @@
     <!-- Template Base Styles Start -->
     <link rel="stylesheet" href="{{ asset('css/styles.css') }}" />
     <!-- Template Base Styles End -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css">
 
     <style>
-        .no-arrow{
+        .no-arrow {
             display: flex;
 
         }
-        .cartvalue{
+
+        .cartvalue {
             background: #0a2b4f;
             color: #fff;
             font-weight: bold;
@@ -53,7 +54,8 @@
             padding-right: 0.2rem;
             border-radius: 5px;
         }
-        .white{
+
+        .white {
             background: #fff !important;
             color: #0a2b4f !important;
         }
@@ -88,10 +90,10 @@
                     <div class="d-flex user position-relative" data-bs-toggle="dropdown" aria-haspopup="true"
                         aria-expanded="false">
                         <img class="profile" alt="profile" src="{{ asset('img/profile-11.webp') }}" />
-                        <div class="name"> {{ session('admin_user')->username  }}
+                        <div class="name"> {{ session('admin_user')->username }}
                             <div class="card-body h-100">
                                 {{-- <h1>Welcome </h1> --}}
-                                <p> {{ session('admin_user')->fullname  }}</p>
+                                <p> {{ session('admin_user')->fullname }}</p>
                             </div>
                         </div>
                     </div>
@@ -202,20 +204,14 @@
                 <li class="nav-item dropdown no-arrow">
 
 
-                    <form method="post" action="{{ route('login') }}" class="nav-link">
+                    <form method="post" action="{{ route('admin.logout') }}" class="nav-link">
                         @csrf
+                        <button class="trash logout" type="submit" name="logout">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
 
-
-
-
-
-    @csrf
-    <button class="trash logout" type="submit" name="logout">
-        <i class="fas fa-sign-out-alt"></i> Logout
-    </button>
-</form>
-
-                        {{-- <button class="trash logout" type="submit" name="logout">
+                    {{-- <button class="trash logout" type="submit" name="logout">
                             <i class="fas fa-sign-out-alt"></i>Logout
                         </button> --}}
                     </form>

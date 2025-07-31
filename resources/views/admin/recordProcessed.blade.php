@@ -328,7 +328,7 @@
                         console.log("Processing record for:", matric, sessionadmin);
 
                         const confirmationText = ecopy_email ?
-                            `Are you sure you want to approve the transcript for student ${matric}? Note: An email will be sent to ${ecopy_email} with the transcript.` :
+                            `Are you sure you want to approve the transcript for student ${matric}? \n Note: An email will be sent to ${ecopy_email} with the transcript.` :
                             `Are you sure you want to approve the transcript for student ${matric}?`;
                         // Show SweetAlert confirmation dialog
                         Swal.fire({

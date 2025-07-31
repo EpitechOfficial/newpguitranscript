@@ -99,6 +99,7 @@
                 </div>
                 <form action="{{ route('admin.transcriptSubmit') }}" method="POST" onsubmit="return validateFormOld()">
                     @csrf
+                    <input type="hidden" name="invoiceNo" value="{{ $records->email }}">
                     <input type="hidden" name="matric" value="{{ $records->matric }}">
                     <input type="hidden" name="secAdmin" value="{{ $records->sessionadmin }}">
                     <input type="hidden" name="cgpa" id="cgpaInputOld">

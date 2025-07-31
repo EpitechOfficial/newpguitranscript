@@ -243,6 +243,8 @@
                     @csrf
                     @if ($biodata)
                         <input type="hidden" name="matric" value="{{ $biodata->matric }}">
+                        <input type="hidden" name="invoiceNo" value="{{ $biodata->email}}">
+
                     @endif
 
                     <input type="hidden" name="secAdmin"

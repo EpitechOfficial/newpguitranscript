@@ -122,7 +122,7 @@
                             <div class="card mb-2">
                                 <div class="row g-0 sh-18 sh-md-14">
                                     <div class="col-auto">
-                                        <img src="img/transcript.jpg"
+                                        <img src="{{ asset('img/transcript.jpg') }}"
                                             class="card-img card-img-horizontal h-100 sw-9 sw-sm-13 sw-md-15"
                                             alt="thumb" />
                                     </div>

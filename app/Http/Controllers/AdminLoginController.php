@@ -168,7 +168,17 @@ public function transreceiveDashboard()
 
 public function transcriptDetails($id)
     {
-        $record = TransDetailsNew::with(['file', 'courier', 'transInvoice'])->findOrFail($id);
-        return view('admin.transcriptDetails', compact('record'));
+        try {
+            $record = TransDetailsNew::where('email', $id)->with(['file', 'courier', 'transInvoice'])->firstOrFail();
+            $ecopy = TransDetailsNew::where('email', $id)
+            ->whereNotNull('ecopy_email')
+            ->whereNotNull('ecopy_address')
+            ->first();
+        } catch (\Exception $e) {
+            Log::error('Error fetching transcript details: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['message' => 'Transcript details not found.']);
+        }
+
+        return view('admin.transcriptDetails', compact('record', 'ecopy'));
     }
 }

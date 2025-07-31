@@ -60,7 +60,7 @@ public function transDetailsFiles()
 
     public function courier()
     {
-        return $this->hasOne(Courier::class, 'appno', 'matric');
+        return $this->hasOne(Courier::class, 'invoiceno', 'email');
     }
 
 

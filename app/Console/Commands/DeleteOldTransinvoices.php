@@ -5,9 +5,9 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 
 use Carbon\Carbon;
-use App\Models\Transinvoice;
+use App\Models\TransInvoice;
 
-class DeleteOldTransinvoices extends Command
+class DeleteOldTransInvoices extends Command
 {
     /**
      * The name and signature of the console command.
@@ -29,7 +29,7 @@ class DeleteOldTransinvoices extends Command
     public function handle()
     {
         $fiveDaysAgo = Carbon::now()->subDays(5);
-        Transinvoice::where('yr', '<', $fiveDaysAgo)->delete();
+        TransInvoice::where('yr', '<', $fiveDaysAgo)->delete();
         $this->info('Old transinvoices deleted successfully.');
     }
 }
