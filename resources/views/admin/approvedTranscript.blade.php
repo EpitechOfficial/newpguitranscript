@@ -248,9 +248,12 @@
                         </div>
                     </div>
 
-                    <div class="watermark">
-                        {{ $biodata->mark ?? 'Default...' }}
-                    </div>
+                    @if (Str::contains($biodata->transInvoice->purpose, 'E-Copy') ||
+                            Str::contains($biodata->transInvoice->purpose, 'Soft Copy'))
+                        <div class="watermark">
+                            {{ $biodata->mark ?? 'Default...' }}
+                        </div>
+                    @endif
 
                     <div class="afterHead">
 
@@ -339,7 +342,7 @@
 
                             </div>
                             <p><strong>Area of Specialization:</strong>
-                                {{ $biodata->specialization ?? ($results->first()->specialization->field_title ?? 'N/A') }}
+                                {{ $biodata->feildofinterest ?? ($results->first()->specialization->field_title ?? 'N/A') }}
                             </p>
 
                             <hr>
@@ -466,10 +469,10 @@
         </div>
     </div>
     </div>
-<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
-<script src="{{ asset('assets/js/jspdf.min.js') }}"></script>
-<script src="{{ asset('assets/js/html2canvas.min.js') }}"></script>
-<script src="{{ asset('assets/js/main.js') }}"></script>
+    <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+    <script src="{{ asset('assets/js/jspdf.min.js') }}"></script>
+    <script src="{{ asset('assets/js/html2canvas.min.js') }}"></script>
+    <script src="{{ asset('assets/js/main.js') }}"></script>
 
 
 </body>

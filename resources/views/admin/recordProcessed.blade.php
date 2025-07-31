@@ -176,7 +176,7 @@
                                                         <button class="btn btn-primary btn-sm w-auto text-nowrap"
                                                             data-matric="{{ $record->matric }}"
                                                             data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}')">
+                                                            onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->email }}')">
                                                             View Transcript
                                                         </button>
 
@@ -261,7 +261,7 @@
 
 
                 <script>
-                    function processTranscript(button, matric, sessionadmin) {
+                    function processTranscript(button, matric, sessionadmin, invoiceNo) {
                         console.log("Processing record for:", matric, sessionadmin); // Debugging log
 
                         button.disabled = true;
@@ -294,6 +294,12 @@
                         sessionAdminInput.name = 'sessionadmin';
                         sessionAdminInput.value = sessionadmin;
                         form.appendChild(sessionAdminInput);
+
+                        const invoiceNoInput = document.createElement('input');
+                        invoiceNoInput.type = 'hidden';
+                        invoiceNoInput.name = 'invoiceNo';
+                        invoiceNoInput.value = invoiceNo;
+                        form.appendChild(invoiceNoInput);
 
                         console.log("Submitting form to:", url); // Debugging log
 

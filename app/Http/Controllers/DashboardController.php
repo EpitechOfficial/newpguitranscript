@@ -638,7 +638,6 @@ class DashboardController extends Controller
                     ->where('sec', $sessionAdmin)
                     ->get();
 
-
                 if ($results->isEmpty()) {
                     // If Result2018 is empty, fallback to ResultOld
                     $records = TransDetailsNew::where('matric', $matric)
@@ -654,7 +653,7 @@ class DashboardController extends Controller
                     return view('admin.transcript_old', compact('records', 'results'));
 
                 }
-                                return view('admin.transcript', compact('biodata', 'results'));
+                return view('admin.transcript', compact('biodata', 'results'));
 
             } elseif ($startYear >= 2013 && $startYear <= 2017) {
                 // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
@@ -855,6 +854,7 @@ class DashboardController extends Controller
         $matric       = $request->input('matric');
         $sessionAdmin = $request->input('sessionadmin');
         $sessiongrad  = $request->input('sessiongrad');
+        $invoiceNo    = $request->input('invoiceNo');
 
         $transDetails = TransDetailsNew::with([
             'transInvoice' => function ($query) {
@@ -863,6 +863,7 @@ class DashboardController extends Controller
             'transDetailsFiles:id,trans_details_id,file_path',
         ])
             ->where('matric', $matric)
+            ->where('email', $invoiceNo)
             ->where('sessionadmin', $sessionAdmin)
             ->first();
 
@@ -901,6 +902,7 @@ class DashboardController extends Controller
                 ])
                     ->where('matric', $matric)
                     ->where('sessionadmin', $sessionAdmin)
+                    ->where('email', $invoiceNo)
                     ->first();
                 Log::info('biodata: ' . $biodata);
                 Log::info('transDetails: ' . $transDetails);
@@ -927,6 +929,7 @@ class DashboardController extends Controller
                     ])
                         ->where('matric', $matric)
                         ->where('sessionadmin', $sessionAdmin)
+                        ->where('email', $invoiceNo)
                         ->first();
 
                     // Try fetching from Result2018 first
@@ -934,6 +937,28 @@ class DashboardController extends Controller
                         ->where('stud_id', $matric)
                         ->where('sec', $sessionAdmin)
                         ->get();
+
+                    if ($results->isEmpty()) {
+                        // If Result2018 is empty, fallback to ResultOld
+                        $biodata = TransDetailsNew::with([
+                            'transInvoice' => function ($query) {
+                                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                            },
+                            'transDetailsFiles:id,trans_details_id,file_path',
+                        ])
+                            ->where('matric', $matric)
+                            ->where('email', $invoiceNo)
+                            ->where('sessionadmin', $sessionAdmin)
+                            ->first();
+
+                        $results = ResultOld::where('matno', $matric)
+                            ->where('sec', $sessionAdmin)
+                            ->with('course')
+                            ->get();
+                        Log::info('Biodata: ' . $biodata);
+                        Log::info('result: ' . $results);
+
+                    }
                 }
 
                 Log::info('Biodata: ' . $biodata);
@@ -950,6 +975,7 @@ class DashboardController extends Controller
                     'transDetailsFiles:id,trans_details_id,file_path',
                 ])
                     ->where('matric', $matric)
+                    ->where('email', $invoiceNo)
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
@@ -959,6 +985,28 @@ class DashboardController extends Controller
                     ->get();
                 Log::info('Biodata: ' . $biodata);
                 Log::info('result: ' . $results);
+
+                if ($results->isEmpty()) {
+                        // If Result2018 is empty, fallback to ResultOld
+                        $biodata = TransDetailsNew::with([
+                            'transInvoice' => function ($query) {
+                                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                            },
+                            'transDetailsFiles:id,trans_details_id,file_path',
+                        ])
+                            ->where('matric', $matric)
+                            ->where('email', $invoiceNo)
+                            ->where('sessionadmin', $sessionAdmin)
+                            ->first();
+
+                        $results = ResultOld::where('matno', $matric)
+                            ->where('sec', $sessionAdmin)
+                            ->with('course')
+                            ->get();
+                        Log::info('Biodata: ' . $biodata);
+                        Log::info('result: ' . $results);
+
+                    }
                 return view('admin.approvedTranscript', compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender'));
             } elseif ($startYear >= 2013 && $startYear <= 2017) {
                 // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
@@ -969,6 +1017,7 @@ class DashboardController extends Controller
                     'transDetailsFiles:id,trans_details_id,file_path',
                 ])
                     ->where('matric', $matric)
+                    ->where('email', $invoiceNo)
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
@@ -986,6 +1035,7 @@ class DashboardController extends Controller
                         'transDetailsFiles:id,trans_details_id,file_path',
                     ])
                         ->where('matric', $matric)
+                        ->where('email', $invoiceNo)
                         ->where('sessionadmin', $sessionAdmin)
                         ->first();
 
@@ -1011,6 +1061,7 @@ class DashboardController extends Controller
                     'transDetailsFiles:id,trans_details_id,file_path',
                 ])
                     ->where('matric', $matric)
+                    ->where('email', $invoiceNo)
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
