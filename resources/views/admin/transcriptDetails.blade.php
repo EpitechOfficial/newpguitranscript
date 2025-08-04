@@ -123,18 +123,30 @@
                         <span>{{ $ecopy->ecopy_email ?? 'N/A' }}</span>
                         <strong>E-Copy Destination Address:</strong>
                         <span>{{ $ecopy->ecopy_address ?? 'N/A' }}</span>
-                        <strong>Dispatch Mode:</strong>
-                        <span>{{ $record->courier->courier_name ?? 'N/A' }}</span>
-                        <strong>Dispatch Country:</strong>
-                        <span>{{ $record->courier->courier_name ?? 'N/A' }}</span>
-                        <strong>Destination Address:</strong>
-                        <span>{{ $record->courier->destination ?? 'N/A' }}</span>
-                        <strong>Destination 2:</strong>
-                        <span>{{ $record->courier->address2 ?? 'N/A' }}</span>
                         <strong>Email:</strong>
-                        <span>{{ $record->courier->email ?? 'N/A' }}</span>
+                        <span>{{ $record->getPrimaryCourier()->email ?? 'N/A' }}</span>
                         <strong>Phone:</strong>
-                        <span>{{ $record->courier->phone ?? 'N/A' }}</span>
+                        <span>{{ $record->getPrimaryCourier()->phone ?? 'N/A' }}</span>
+                        
+                        @if($record->couriers->count() > 1)
+                            <strong>All Courier Destinations:</strong>
+                            <span>
+                                @foreach($record->couriers as $index => $courier)
+                                    <div style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                        <strong>Copy {{ $index + 1 }}:</strong><br>
+                                        <strong>Dispatch Mode:</strong> {{ $courier->courier_name ?? 'N/A' }}<br>
+                                        <strong>Transcript Type:</strong> {{ $courier->transcript_purpose ?? 'N/A' }}<br>
+                                        <strong>Number of Copies:</strong> {{ $courier->number_of_copies ?? '1' }}<br>
+                                        <strong>Country:</strong> {{ $courier->destination }}<br>
+                                        <strong>Address:</strong> {{ $courier->address }}<br>
+                                        @if($courier->address2)
+                                            <strong>Address 2:</strong> {{ $courier->address2 }}<br>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </span>
+                        @endif
+                        
                         <strong>Date Requested:</strong>
                         <span>{{ $record->date_requested }}</span>
                         <strong>Status:</strong>

@@ -20,37 +20,34 @@ class AdminLoginController extends Controller
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'username' => 'required|string',
-        'password' => 'required|string',
-    ]);
+    {
+        $request->validate([
+            'username' => 'required|string',
+            'password' => 'required|string',
+        ]);
 
-    $credential = $request->only('username', 'password');
+        $credential = $request->only('username', 'password');
 
-    if (Auth::guard('admin')->attempt($credential)) {
-    $user = AdminUser::where('username', $credential['username'])->first();
+        if (Auth::guard('admin')->attempt($credential)) {
+            $user = AdminUser::where('username', $credential['username'])->first();
 
-    $records = TransDetailsNew::where('status', '>=', 0)
-        ->whereRaw('email REGEXP "^[0-9]+$"')
-        ->whereHas('transInvoice', function ($query) {
-            $query->whereColumn('amount_charge', 'amount_paid');
-        })
-        ->with([
-            'transInvoice' => function ($query) {
-                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-            },
-            'transDetailsFiles:id,trans_details_id,file_path' // Include file_path here
-        ])
-        ->get();
+            // Log successful login
+            Log::info('Admin login successful: ' . $user->username . ' (Role: ' . $user->role . ')');
 
-    Session::put('admin_user', $user);
-    Session::put('admin_username', $user->username);
-    Session::put('records', $records);
-    Log::error($records);
+            Session::put('admin_username', $user->username);
+            Session::put('admin_user', $user);
+            // Redirect based on role
+            return $this->redirectBasedOnRole($user);
+        }
 
+        return back()->withErrors(['login_error' => 'Invalid Username or Password'])->withInput();
+    }
 
-
+    /**
+     * Redirect admin based on their role
+     */
+    private function redirectBasedOnRole($user)
+    {
         switch ($user->role) {
             case 7:
                 return redirect()->route('admin.recordProcesseds');
@@ -69,9 +66,6 @@ class AdminLoginController extends Controller
                 return redirect('admin/login')->withErrors(['login_error' => 'Unauthorized role.']);
         }
     }
-
-    return back()->withErrors(['login_error' => 'Invalid Username or Password'])->withInput();
-}
 
     public function dashboard(Request $request)
 {

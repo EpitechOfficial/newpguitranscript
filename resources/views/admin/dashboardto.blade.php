@@ -136,7 +136,7 @@
         <div class="card mb-2">
             <div class="card-body h-100">
                 {{-- @dd(session('user')); --}}
-                Welcome <h1> {{ session('admin_user')->fullname }}
+                Welcome <h1> {{ $adminUser->fullname }}
                 </h1>
             </div>
         </div>
@@ -171,7 +171,6 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($records as $index => $record)
-                                    @if ($record->status == 2)
 
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
@@ -231,7 +230,6 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                        @endif
                                     @endforeach
                                 </tbody>
                             </table>

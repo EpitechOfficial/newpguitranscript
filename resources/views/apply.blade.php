@@ -8,13 +8,28 @@
         #othernames,
         #maiden_name {
             color: #000000 !important;
-        } .mt-10{margin-top: 1rem}
+        } 
+        .mt-10{margin-top: 1rem}
         .dispatch-fields {
             display: block;
         }
         .ecopy-fields {
             display: none;
         }
+        .dispatch-set {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+        .dispatch-set h5 {
+            color: #495057;
+            border-bottom: 2px solid #0a2b4f;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
     </style>
     <div class="container">
         <!-- Title and Top Buttons Start -->
@@ -211,6 +226,7 @@
                                         <option value="DHL">DHL</option>
                                         <option value="UPS">UPS</option>
                                         <option value="NIPOST">NIPOST</option>
+                                        <option value="BY-HAND">BY HAND</option>
                                     </select>
                                 </div>
 
@@ -219,26 +235,8 @@
                         
                         <!-- Dispatch Fields - Hidden for E-copy -->
                         <div class="mt-10 col-md-12 dispatch-fields">
-                            <div class="row w-full w-100">
-                                <div class="col form-group">
-                                    <label for="dispatch_country">Dispatch Country</label>
-                                    <select id="dispatch_country" name="dispatch_country" class="form-control">
-                                        <option value="">Select Country</option>
-                                        @foreach (['Nigeria', 'United States', 'United Kingdom', 'Canada', 'Germany', 'France', 'India', 'China', 'South Africa', 'Ghana', 'Kenya', 'Australia', 'Other'] as $country)
-                                            <option value="{{ $country }}">{{ $country }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col form-group">
-                                    <label for="destination_address">Destination Address</label>
-                                    <input type="text" id="destination_address" name="destination_address"
-                                        class="form-control" placeholder="Enter destination address">
-                                </div>
-                                <div class="col form-group">
-                                    <label for="destination2">Destination 2 (optional)</label>
-                                    <input type="text" id="destination2" name="destination2" class="form-control"
-                                        placeholder="Enter second address (optional)">
-                                </div>
+                            <div id="dispatch-container">
+                                <!-- Dispatch fields will be dynamically generated here -->
                             </div>
                         </div>
 
@@ -297,27 +295,97 @@
             // Function to toggle fields based on transcript type
             function toggleFieldsBasedOnTranscriptType(transcriptType) {
                 var isEcopy = transcriptType && transcriptType.toLowerCase().includes('e-copy');
+                var isStudentCopy = transcriptType && transcriptType.toLowerCase().includes('student copy');
                 
                 if (isEcopy) {
                     // Hide dispatch fields and show e-copy fields
                     $('.dispatch-fields').hide();
                     $('.ecopy-fields').show();
                     
-                    // Remove required attribute from dispatch fields
-                    $('#dispatch_mode, #dispatch_country, #destination_address').removeAttr('required');
+                    // Set number of copies to 1 and show only 1 option for e-copy
+                    $('#number_of_copies').html('<option value="1">One (1)</option>').val('1');
+                    
+                    // Remove required attribute from all dispatch fields
+                    $('#dispatch_mode').removeAttr('required');
+                    $('.dispatch-country').removeAttr('required');
+                    $('input[name="destination_address[]"]').removeAttr('required');
                     
                     // Add required attribute to e-copy fields
                     $('#ecopy_email').attr('required', true);
+                } else if (isStudentCopy) {
+                    // Show dispatch fields and hide e-copy fields for student copy
+                    $('.dispatch-fields').show();
+                    $('.ecopy-fields').hide();
+                    
+                    // Set number of copies to 1 and show only 1 option for student copy
+                    $('#number_of_copies').html('<option value="1">One (1)</option>').val('1');
+                    
+                    // Add required attribute to dispatch fields
+                    $('#dispatch_mode').attr('required', true);
+                    
+                    // Remove required attribute from e-copy fields
+                    $('#ecopy_email').removeAttr('required');
+                    
+                    // Generate dispatch fields (only 1 set for student copy)
+                    generateDispatchFields();
                 } else {
                     // Show dispatch fields and hide e-copy fields
                     $('.dispatch-fields').show();
                     $('.ecopy-fields').hide();
                     
+                    // Enable number of copies selection for regular requests
+                    $('#number_of_copies').html('<option value="">Select Number of Copies</option><option value="1">One (1)</option><option value="2">Two (2)</option><option value="3">Three (3)</option><option value="4">Four (4)</option><option value="5">Five (5)</option>');
+                    
                     // Add required attribute to dispatch fields
-                    $('#dispatch_mode, #dispatch_country, #destination_address').attr('required', true);
+                    $('#dispatch_mode').attr('required', true);
                     
                     // Remove required attribute from e-copy fields
                     $('#ecopy_email').removeAttr('required');
+                    
+                    // Generate dispatch fields based on number of copies
+                    generateDispatchFields();
+                }
+            }
+
+            // Function to generate dispatch fields based on number of copies
+            function generateDispatchFields() {
+                var numCopies = parseInt($('#number_of_copies').val()) || 1;
+                var container = $('#dispatch-container');
+                container.empty();
+                
+                // Check if dispatch fields should be required (not E-copy)
+                var transcriptType = $('#transcript_type').val().toLowerCase();
+                var isEcopy = transcriptType.includes('e-copy');
+                var requiredAttr = isEcopy ? '' : 'required';
+                
+                for (var i = 1; i <= numCopies; i++) {
+                    var fieldSet = `
+                        <div class="dispatch-set mb-4" data-copy="${i}">
+                            <h5 class="mb-3">Dispatch Information for Copy ${i}</h5>
+                            <div class="row w-full w-100">
+                                <div class="col form-group">
+                                    <label for="dispatch_country_${i}">Dispatch Country</label>
+                                    <select id="dispatch_country_${i}" name="dispatch_country[]" class="form-control dispatch-country" ${requiredAttr}>
+                                        <option value="">Select Country</option>
+                                        @foreach (['Nigeria', 'United States', 'United Kingdom', 'Canada', 'Germany', 'France', 'India', 'China', 'South Africa', 'Ghana', 'Kenya', 'Australia', 'Other'] as $country)
+                                            <option value="{{ $country }}">{{ $country }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col form-group">
+                                    <label for="destination_address_${i}">Destination Address</label>
+                                    <input type="text" id="destination_address_${i}" name="destination_address[]"
+                                        class="form-control" placeholder="Enter destination address for copy ${i}" ${requiredAttr}>
+                                </div>
+                                <div class="col form-group">
+                                    <label for="destination2_${i}">Destination 2 (optional)</label>
+                                    <input type="text" id="destination2_${i}" name="destination2[]" class="form-control"
+                                        placeholder="Enter second address for copy ${i} (optional)">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.append(fieldSet);
                 }
             }
 
@@ -326,6 +394,29 @@
                 var transcriptType = this.value;
                 toggleFieldsBasedOnTranscriptType(transcriptType);
                 setDispatchCountryOptions(transcriptType);
+            });
+
+            // Handle number of copies change
+            $('#number_of_copies').on('change', function() {
+                var transcriptType = $('#transcript_type').val().toLowerCase();
+                if (!transcriptType.includes('e-copy') && !transcriptType.includes('student copy')) {
+                    generateDispatchFields();
+                }
+            });
+
+            // Handle dispatch mode change
+            $(document).on('change', '#dispatch_mode', function() {
+                var dispatchMode = $(this).val();
+                if (dispatchMode === 'BY-HAND') {
+                    // Set all dispatch country dropdowns to Nigeria
+                    $('.dispatch-country').each(function() {
+                        $(this).html('<option value="Nigeria">Nigeria</option>');
+                    });
+                } else {
+                    // Reset to all countries if not BY-HAND
+                    var transcriptType = $('#transcript_type').val();
+                    setDispatchCountryOptions(transcriptType);
+                }
             });
 
             // Initialize on page load
@@ -392,15 +483,21 @@
             var allCountries = [
                 'Nigeria', 'United States', 'United Kingdom', 'Canada', 'Germany', 'France', 'India', 'China', 'South Africa', 'Ghana', 'Kenya', 'Australia', 'Other'
             ];
-            var $dispatchCountry = $('#dispatch_country');
             
             function setDispatchCountryOptions(type) {
                 if (type === 'Transcript Within Nigeria') {
-                    $dispatchCountry.html('<option value="Nigeria">Nigeria</option>');
+                    // Update all dispatch country dropdowns
+                    $('.dispatch-country').each(function() {
+                        $(this).html('<option value="Nigeria">Nigeria</option>');
+                    });
                 } else {
-                    $dispatchCountry.html('<option value="">Select Country</option>');
-                    allCountries.forEach(function(country) {
-                        $dispatchCountry.append('<option value="' + country + '">' + country + '</option>');
+                    // Update all dispatch country dropdowns
+                    $('.dispatch-country').each(function() {
+                        var $select = $(this);
+                        $select.html('<option value="">Select Country</option>');
+                        allCountries.forEach(function(country) {
+                            $select.append('<option value="' + country + '">' + country + '</option>');
+                        });
                     });
                 }
             }

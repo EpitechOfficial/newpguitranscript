@@ -23,5 +23,14 @@ class Courier extends Model
         'courier_type',
         'perm_address',
         'date',
+        'trans_details_id', // Add this field to link to TransDetailsNew
+        'transcript_purpose', // Add this field to store specific transcript type for this copy
+        'number_of_copies', // Add this field to store number of copies for this delivery
     ];
+
+    // Relationship to TransDetailsNew
+    public function transDetails()
+    {
+        return $this->belongsTo(TransDetailsNew::class, 'trans_details_id', 'id');
+    }
 }

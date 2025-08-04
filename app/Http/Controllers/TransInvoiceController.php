@@ -66,6 +66,7 @@ class TransInvoiceController extends Controller
 
             Cart::where('matric', $matric)->delete();
 
+            // Update courier records with invoice number
             Courier::where('appno', $matric)
                 ->where('invoiceno', 0)
                 ->update(['invoiceno' => $trans->invoiceno]);

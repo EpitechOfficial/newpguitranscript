@@ -251,7 +251,11 @@
                     @if (Str::contains($biodata->transInvoice->purpose, 'E-Copy') ||
                             Str::contains($biodata->transInvoice->purpose, 'Soft Copy'))
                         <div class="watermark">
-                            {{ $biodata->mark ?? 'Default...' }}
+                            {{ $biodata->ecopy_address ?? 'Default...' }}
+                        </div>
+                    @else
+                        <div class="watermark">
+                            {{ $biodata->couriers->address ?? 'Default...' }}
                         </div>
                     @endif
 
@@ -374,8 +378,7 @@
 
                     <div class="page-break"></div>
 
-                    @if (Str::contains($biodata->transInvoice->purpose, 'E-Copy') ||
-                            Str::contains($biodata->transInvoice->purpose, 'Soft Copy'))
+                    @if ($biodata->ecopy_email)
                         <div class="letter">
                             <div class="header">
                                 <div class="title">

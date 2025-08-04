@@ -254,6 +254,7 @@ class DashboardController extends Controller
 
         // Check if it's an e-copy request
         $isEcopy = Str::contains($request->transcript_type, ['E-Copy', 'Soft Copy']);
+        $isStudentCopy = Str::contains($request->transcript_type, ['Student Copy']);
 
         // Set up validation rules BEFORE validation
         $validationRules = [
@@ -279,9 +280,12 @@ class DashboardController extends Controller
             $validationRules['ecopy_address'] = 'nullable|string';
         } else {
             $validationRules['dispatch_mode']       = 'required';
-            $validationRules['dispatch_country']    = 'required';
-            $validationRules['destination_address'] = 'required';
-            $validationRules['destination2']        = 'nullable';
+            $validationRules['dispatch_country']    = 'required|array';
+            $validationRules['dispatch_country.*']  = 'required|string';
+            $validationRules['destination_address'] = 'required|array';
+            $validationRules['destination_address.*'] = 'required|string';
+            $validationRules['destination2']        = 'nullable|array';
+            $validationRules['destination2.*']      = 'nullable|string';
         }
 
         // NOW validate with all the rules
@@ -382,25 +386,54 @@ class DashboardController extends Controller
             $transDetailsItems['ecopy_email']   = $validatedData['ecopy_email'] ?? null;
             $transDetailsItems['ecopy_address'] = $validatedData['ecopy_address'] ?? null;
         } else {
-            // Store courier details for non-e-copy requests
-            Courier::create([
-                'appno'        => $matric,
-                'surname'      => $validatedData['surname'],
-                'othernames'   => $validatedData['othernames'],
-                'email'        => $user->email,
-                'phone'        => $user->phone,
-                'courier_name' => $validatedData['dispatch_mode'],
-                'destination'  => $validatedData['dispatch_country'],
-                'address'      => $validatedData['destination_address'],
-                'address2'     => $validatedData['destination2'] ?? null,
-                'courier_type' => $validatedData['dispatch_mode'],
-                'perm_address' => $user->email,
-                'date'         => now(),
-            ]);
+            // Store courier details for non-e-copy requests (including Student Copy)
+            // Handle multiple dispatch addresses based on number of copies
+            $dispatchCountries = $request->input('dispatch_country', []);
+            $destinationAddresses = $request->input('destination_address', []);
+            $destination2Addresses = $request->input('destination2', []);
+            
+            // Ensure we have arrays even if single values are passed
+            if (!is_array($dispatchCountries)) {
+                $dispatchCountries = [$dispatchCountries];
+            }
+            if (!is_array($destinationAddresses)) {
+                $destinationAddresses = [$destinationAddresses];
+            }
+            if (!is_array($destination2Addresses)) {
+                $destination2Addresses = [$destination2Addresses];
+            }
+            
+            // Create courier records for each copy
+            for ($i = 0; $i < count($dispatchCountries); $i++) {
+                Courier::create([
+                    'appno'        => $matric,
+                    'surname'      => $validatedData['surname'],
+                    'othernames'   => $validatedData['othernames'],
+                    'email'        => $user->email,
+                    'phone'        => $user->phone,
+                    'courier_name' => $validatedData['dispatch_mode'],
+                    'destination'  => $dispatchCountries[$i] ?? '',
+                    'address'      => $destinationAddresses[$i] ?? '',
+                    'address2'     => $destination2Addresses[$i] ?? null,
+                    'courier_type' => $validatedData['dispatch_mode'],
+                    'perm_address' => $user->email,
+                    'date'         => now(),
+                    'trans_details_id' => null, // Will be updated after TransDetailsNew is created
+                    'transcript_purpose' => $validatedData['transcript_type'], // Store the specific transcript type
+                    'number_of_copies' => 1, // Each courier record represents 1 copy
+                ]);
+            }
         }
 
         // Store the data
         $transDetails = TransDetailsNew::create($transDetailsItems);
+
+        // Update courier records with the trans_details_id
+        if (!$isEcopy) {
+            Courier::where('appno', $matric)
+                ->where('trans_details_id', null)
+                ->update(['trans_details_id' => $transDetails->id]);
+        }
 
         // Store uploaded file path separately
         if ($request->hasFile('file')) {
@@ -584,8 +617,7 @@ class DashboardController extends Controller
 
                 $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
                 Log::info('biodata: ' . $biodata);
-                Log::info('transDetails: ' . $transDetails);
-                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
+                $gender = $biodata->sex ?? 'N/A';
 
                 $results = Result2023::with('course') // Eager load the 'course' relationship
                     ->with(['faculty', 'department'])
@@ -854,16 +886,19 @@ class DashboardController extends Controller
         $matric       = $request->input('matric');
         $sessionAdmin = $request->input('sessionadmin');
         $sessiongrad  = $request->input('sessiongrad');
-        $invoiceNo    = $request->input('invoiceNo');
+        $id    = $request->input('id');
 
         $transDetails = TransDetailsNew::with([
             'transInvoice' => function ($query) {
                 $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
             },
+            'couriers' => function ($query) {
+                $query->select('address');
+            },
             'transDetailsFiles:id,trans_details_id,file_path',
         ])
             ->where('matric', $matric)
-            ->where('email', $invoiceNo)
+            ->where('id', $id)
             ->where('sessionadmin', $sessionAdmin)
             ->first();
 
@@ -902,7 +937,7 @@ class DashboardController extends Controller
                 ])
                     ->where('matric', $matric)
                     ->where('sessionadmin', $sessionAdmin)
-                    ->where('email', $invoiceNo)
+                    ->where('id', $id)
                     ->first();
                 Log::info('biodata: ' . $biodata);
                 Log::info('transDetails: ' . $transDetails);
@@ -929,7 +964,7 @@ class DashboardController extends Controller
                     ])
                         ->where('matric', $matric)
                         ->where('sessionadmin', $sessionAdmin)
-                        ->where('email', $invoiceNo)
+                        ->where('id', $id)
                         ->first();
 
                     // Try fetching from Result2018 first
@@ -947,7 +982,7 @@ class DashboardController extends Controller
                             'transDetailsFiles:id,trans_details_id,file_path',
                         ])
                             ->where('matric', $matric)
-                            ->where('email', $invoiceNo)
+                            ->where('id', $id)
                             ->where('sessionadmin', $sessionAdmin)
                             ->first();
 
@@ -975,7 +1010,7 @@ class DashboardController extends Controller
                     'transDetailsFiles:id,trans_details_id,file_path',
                 ])
                     ->where('matric', $matric)
-                    ->where('email', $invoiceNo)
+                    ->where('id', $id)
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
@@ -995,7 +1030,7 @@ class DashboardController extends Controller
                             'transDetailsFiles:id,trans_details_id,file_path',
                         ])
                             ->where('matric', $matric)
-                            ->where('email', $invoiceNo)
+                            ->where('id', $id)
                             ->where('sessionadmin', $sessionAdmin)
                             ->first();
 
@@ -1017,7 +1052,7 @@ class DashboardController extends Controller
                     'transDetailsFiles:id,trans_details_id,file_path',
                 ])
                     ->where('matric', $matric)
-                    ->where('email', $invoiceNo)
+                    ->where('id', $id)
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
@@ -1035,7 +1070,7 @@ class DashboardController extends Controller
                         'transDetailsFiles:id,trans_details_id,file_path',
                     ])
                         ->where('matric', $matric)
-                        ->where('email', $invoiceNo)
+                        ->where('id', $id)
                         ->where('sessionadmin', $sessionAdmin)
                         ->first();
 
@@ -1061,7 +1096,7 @@ class DashboardController extends Controller
                     'transDetailsFiles:id,trans_details_id,file_path',
                 ])
                     ->where('matric', $matric)
-                    ->where('email', $invoiceNo)
+                    ->where('id', $id)
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
@@ -1115,7 +1150,7 @@ class DashboardController extends Controller
         try {
             Log::info('Request Method: ' . $request->method());
             Log::info('Request Data:', $request->all());
-
+    
             // Validate input
             $request->validate([
                 'matric'      => 'required',
@@ -1125,29 +1160,29 @@ class DashboardController extends Controller
                 'degreeAward' => 'required|string|max:255',
                 'awardDate'   => 'required|string|max:255',
             ]);
-
+    
             // Normalize session admin value
             $normalizedSecAdmin = preg_replace('/\/(\d{2})$/', '/20$1', $request->secAdmin);
-
-            // Retrieve transcript record
-            $transcript = TransDetailsNew::where('email', $request->invoiceNo)
+    
+            // Update all matching transcript records
+            $affectedRows = TransDetailsNew::where('email', $request->invoiceNo)
                 ->where('matric', $request->matric)
                 ->where('sessionadmin', $normalizedSecAdmin)
-                ->firstOrFail();
-
-            if (! $transcript) {
-                return back()->with('error', 'Transcript record not found.');
+                ->update([
+                    'award'     => $request->cgpa,
+                    'programme' => $request->degreeAward,
+                    'dateAward' => $request->awardDate,
+                    'status'    => 7,
+                ]);
+    
+            if ($affectedRows === 0) {
+                return back()->with('error', 'No transcript records found to update.');
             }
-
-            // Update transcript record
-            $transcript->update([
-                'award'     => $request->cgpa,
-                'programme' => $request->degreeAward,
-                'dateAward' => $request->awardDate,
-                'status'    => 7,
-            ]);
-
-            return redirect()->route('admin.dashboard.to')->with('success', 'Transcript submitted for approval.');
+    
+            Log::info("Updated {$affectedRows} transcript record(s)");
+            
+            return redirect()->route('admin.dashboard.to')->with('success', "Successfully updated {$affectedRows} transcript record(s) for approval.");
+            
         } catch (\Exception $e) {
             Log::error('Error submitting transcript: ' . $e->getMessage());
             return back()->with('error', 'An error occurred while submitting the transcript. Please try again.');
@@ -1163,7 +1198,7 @@ class DashboardController extends Controller
             $request->validate([
                 'matric'       => 'required',
                 'sessionadmin' => 'required',
-
+                'id' => 'required',
             ]);
 
             // Retrieve transcript record
@@ -1176,6 +1211,7 @@ class DashboardController extends Controller
                 ->where('matric', $request->matric)
                 ->where('sessionadmin', $request->sessionadmin)
                 ->where('status', 7)
+                ->where('id', $request->id)
                 ->first();
 
             if (! $transcript) {
@@ -1191,8 +1227,8 @@ class DashboardController extends Controller
             //$courier = Courier::where('appno', $request->matric)->first();
             $destinationEmail = $transcript->ecopy_email ?? null;
 
-            if ((Str::contains($transcript->transInvoice->purpose, 'E-Copy')) || (Str::contains($transcript->transInvoice->purpose, 'Soft Copy'))) {
-                try {
+            if ($transcript->ecopy_email) {
+                    try {
                     $this->sendTranscriptEmailOnApproval($transcript);
                     Log::info("Transcript email sent successfully to: " . $destinationEmail);
                 } catch (\Exception $e) {
@@ -1219,7 +1255,7 @@ class DashboardController extends Controller
             $request->validate([
                 'matric'       => 'required',
                 'sessionadmin' => 'required',
-
+                'id' => 'required',
             ]);
 
             // Normalize session admin value
@@ -1227,6 +1263,7 @@ class DashboardController extends Controller
             // Retrieve transcript record
             $transcript = TransDetailsNew::where('matric', $request->matric)
                 ->where('sessionadmin', $request->sessionadmin)
+                ->where('id', $request->id)
                 ->first();
 
             if (! $transcript) {

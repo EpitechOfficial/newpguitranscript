@@ -176,7 +176,7 @@
                                                         <button class="btn btn-primary btn-sm w-auto text-nowrap"
                                                             data-matric="{{ $record->matric }}"
                                                             data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->email }}')">
+                                                            onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->id }}')">
                                                             View Transcript
                                                         </button>
 
@@ -184,13 +184,13 @@
                                                         <button class="btn btn-success btn-sm"
                                                             data-matric="{{ $record->matric }}"
                                                             data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="approveRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}','{{ $record->ecopy_email }}')">
+                                                            onclick="approveRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}','{{ $record->ecopy_email }}','{{ $record->id }}')">
                                                             Approve
                                                         </button>
                                                         <button class="btn btn-danger btn-sm"
                                                             data-matric="{{ $record->matric }}"
                                                             data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}')">
+                                                            onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}','{{ $record->id }}')">
                                                             Reject
                                                         </button>
 
@@ -261,7 +261,7 @@
 
 
                 <script>
-                    function processTranscript(button, matric, sessionadmin, invoiceNo) {
+                    function processTranscript(button, matric, sessionadmin, id) {
                         console.log("Processing record for:", matric, sessionadmin); // Debugging log
 
                         button.disabled = true;
@@ -295,11 +295,11 @@
                         sessionAdminInput.value = sessionadmin;
                         form.appendChild(sessionAdminInput);
 
-                        const invoiceNoInput = document.createElement('input');
-                        invoiceNoInput.type = 'hidden';
-                        invoiceNoInput.name = 'invoiceNo';
-                        invoiceNoInput.value = invoiceNo;
-                        form.appendChild(invoiceNoInput);
+                        const idInput = document.createElement('input');
+                        idInput.type = 'hidden';
+                        idInput.name = 'id';
+                        idInput.value = id;
+                        form.appendChild(idInput);
 
                         console.log("Submitting form to:", url); // Debugging log
 
@@ -330,7 +330,7 @@
 
 
                 <script>
-                    function approveRecord(button, matric, sessionadmin, ecopy_email) {
+                    function approveRecord(button, matric, sessionadmin, ecopy_email, id) {
                         console.log("Processing record for:", matric, sessionadmin);
 
                         const confirmationText = ecopy_email ?
@@ -382,6 +382,12 @@
                                 sessionAdminInput.value = sessionadmin;
                                 form.appendChild(sessionAdminInput);
 
+                                const idInput = document.createElement('input');
+                                idInput.type = 'hidden';
+                                idInput.name = 'id';
+                                idInput.value = id;
+                                form.appendChild(idInput);
+
                                 console.log("Submitting form to:", url);
 
                                 // Append form to the body and submit it
@@ -401,7 +407,7 @@
                         });
                     }
 
-                    function rejectRecord(button, matric, sessionadmin) {
+                    function rejectRecord(button, matric, sessionadmin, id) {
                         console.log("Processing record for:", matric, sessionadmin);
 
                         // Show SweetAlert confirmation dialog for rejection
@@ -449,6 +455,12 @@
                                 sessionAdminInput.name = 'sessionadmin';
                                 sessionAdminInput.value = sessionadmin;
                                 form.appendChild(sessionAdminInput);
+
+                                const idInput = document.createElement('input');
+                                idInput.type = 'hidden';
+                                idInput.name = 'id';
+                                idInput.value = id;
+                                form.appendChild(idInput);
 
                                 console.log("Submitting form to:", url);
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ResultOldController;
 use App\Http\Controllers\AuthenticateController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -80,9 +81,19 @@ Route::get('admin/transreceive-dashboard', [AdminLoginController::class, 'transr
 // Admin Authenticated Routes
 Route::post('/admin/update-cheque', [DashboardController::class, 'updateCheque'])->name('update.cheque');
 Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'adminDashboard'])->name('dashboard');
+    // Main dashboard
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    
+    // Role-specific dashboards
+    Route::get('/dashboard-to', [AdminDashboardController::class, 'toDashboard'])->name('dashboard.to');
+    Route::get('/dashboard-ki', [AdminDashboardController::class, 'kiDashboard'])->name('dashboard.ki');
+    Route::get('/dashboard-po', [AdminDashboardController::class, 'poDashboard'])->name('dashboard.po');
+    Route::get('/dashboard-fo', [AdminDashboardController::class, 'foDashboard'])->name('dashboard.fo');
+    Route::get('/transreceive-dashboard', [AdminDashboardController::class, 'transreceiveDashboard'])->name('transrecevedashboard');
+    Route::get('/record-processed', [AdminDashboardController::class, 'recordProcessed'])->name('recordProcesseds');
+    
+    // Legacy routes for backward compatibility
     Route::get('/transrecieveDashboard', [DashboardController::class, 'transrecieveDashboard'])->name('transrecieveDashboard');
-    // Route::get('/processed-record', [DashboardController::class, 'recordProcessed'])->name('recordProcessed');
     Route::get('/approved-record', [DashboardController::class, 'recordApproved'])->name('recordApproved');
     Route::post('/logout', [AdminLoginController::class, 'destroy'])->name('logout');
     Route::post('/process-record', [DashboardController::class, 'processRecord'])->name('processRecord');
@@ -93,20 +104,11 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::post('/reject-to-key', [DashboardController::class, 'reject'])->name('transcriptRejectToKey');
     Route::post('/transcript/submit', [DashboardController::class, 'submitForApproval'])->name('transcriptSubmit');
 
-
-    Route::get('/dashboard', [AdminLoginController::class, 'dashboard'])->name('dashboard');
-    Route::get('/dashboard-to', [AdminLoginController::class, 'dashboardTo'])->name('dashboard.to');
-    Route::get('/dashboard-ki', [AdminLoginController::class, 'dashboardKi'])->name('dashboard.ki');
-    Route::get('/dashboard-po', [AdminLoginController::class, 'dashboardPo'])->name('dashboard.po');
-    Route::get('/dashboard-fo', [AdminLoginController::class, 'dashboardFo'])->name('dashboard.fo');
-    Route::get('/dashboard-hd', [AdminLoginController::class, 'dashboardHd'])->name('dashboard.hd');
-
- Route::get('/edit-transcript-realtime', [ResultOldController::class, 'editTranscriptRealtimePage'])->name('edit_transcript_realtime');
+    // Transcript editing routes
+    Route::get('/edit-transcript-realtime', [ResultOldController::class, 'editTranscriptRealtimePage'])->name('edit_transcript_realtime');
     Route::get('/edit-transcript-realtime/fetch', [ResultOldController::class, 'fetchTranscriptRealtime'])->name('edit_transcript_realtime.fetch');
-    // Route::post('/edit-transcript-realtime/update', [ResultOldController::class, 'updateTranscriptRealtime'])->name('edit_transcript_realtime.update');
     Route::post('/edit-transcript-realtime/save', [ResultOldController::class, 'saveTranscriptRealtime'])->name('edit_transcript_realtime.save');
     Route::get('/transcript/details/{id}', [AdminLoginController::class, 'transcriptDetails'])->name('transcript.details');
-
 });
 
 // Route::get('admin/dashboard', [AdminLoginController::class, 'dashboard'])->name('dashboard');
