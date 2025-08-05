@@ -157,6 +157,7 @@
                                         <th>Department</th>
                                         <th>Degree</th>
                                         <th>Field of Interest</th>
+                                        <th>Type</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -171,6 +172,7 @@
                                                 <td>{{ $record->department }}</td>
                                                 <td>{{ $record->degree }}</td>
                                                 <td>{{ $record->feildofinterest }}</td>
+                                                <td>{{ $record->ecopy_email ? 'E-copy' : 'Others' }}</td>
                                                 <td>
                                                     <div class="d-flex gap-2 justify-content-center">
                                                         <button class="btn btn-primary btn-sm w-auto text-nowrap"
@@ -264,9 +266,6 @@
                     function processTranscript(button, matric, sessionadmin, id) {
                         console.log("Processing record for:", matric, sessionadmin); // Debugging log
 
-                        button.disabled = true;
-                        button.innerHTML =
-                            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
                         const url = '{{ route('admin.processTranscript') }}'; // Named route for the backend action
 
                         // Create a form dynamically to submit via POST

@@ -661,32 +661,52 @@ class DashboardController extends Controller
                 return view('admin.transcript', compact('biodata', 'results', 'gender'));
 
             } elseif ($startYear >= 2018 && $startYear <= 2022) {
-                // **2018/2019 and above: Use Result2018**
-                //$biodata = Biodata::where('matric', $matric)->first();
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
+                                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
 
-                $results = Result2018::with('course')
-                    ->where('stud_id', $matric)
-                    ->where('sec', $sessionAdmin)
-                    ->get();
+                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
+                Log::info('biodata: ' . $biodata);
+                $gender = $biodata->sex ?? 'N/A';
+
+                $results = Result2023::with('course') // Eager load the 'course' relationship
+                    ->with(['faculty', 'department'])
+                    ->select('*') // Select all columns
+                    ->where('matric', $matric)
+                    ->where('yr_of_entry', $normalizedSecAdmin)
+                    ->get()
+                    ->makeHidden(['status']); // Hide the 'status' column
+
+                Log::info('results: ' . $results);
 
                 if ($results->isEmpty()) {
-                    // If Result2018 is empty, fallback to ResultOld
-                    $records = TransDetailsNew::where('matric', $matric)
-                        ->where('sessionadmin', $sessionAdmin)
-                        ->where('email', $invoiceNo)
-                        ->first();
+                    // If Result2023 is empty, fallback to Result2018
+                    //$biodata = Biodata::where('matric', $matric)->first();
+                    $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
 
-                    $results = ResultOld::where('matno', $matric)
+                    // Try fetching from Result2018 first
+                    $results = Result2018::with('course')
+                        ->where('stud_id', $matric)
                         ->where('sec', $sessionAdmin)
-                        ->with('course')
                         ->get();
 
-                    return view('admin.transcript_old', compact('records', 'results'));
+                    if ($results->isEmpty()) {
+                        // If Result2018 is empty, fallback to ResultOld
+                        $records = TransDetailsNew::where('matric', $matric)
+                            ->where('sessionadmin', $sessionAdmin)
+                            ->where('email', $invoiceNo)
+                            ->first();
+
+                        $results = ResultOld::where('matno', $matric)
+                            ->where('sec', $sessionAdmin)
+                            ->with('course')
+                            ->get();
+
+                        return view('admin.transcript_old', compact('records', 'results'));
+
+                    }
+                    return view('admin.transcript', compact('biodata', 'results', 'gender'));
 
                 }
-                return view('admin.transcript', compact('biodata', 'results'));
-
+                return view('admin.transcript', compact('biodata', 'results', 'gender'));
             } elseif ($startYear >= 2013 && $startYear <= 2017) {
                 // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
                 $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
@@ -1001,8 +1021,8 @@ class DashboardController extends Controller
 
                 return view('admin.approvedTranscript', compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender'));
             } elseif ($startYear >= 2018 && $startYear <= 2022) {
-                // **2018/2019 and above: Use Result2018**
-                //$biodata = Biodata::where('matric', $matric)->first();
+            $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
+
                 $biodata = TransDetailsNew::with([
                     'transInvoice' => function ($query) {
                         $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
@@ -1010,18 +1030,44 @@ class DashboardController extends Controller
                     'transDetailsFiles:id,trans_details_id,file_path',
                 ])
                     ->where('matric', $matric)
-                    ->where('id', $id)
                     ->where('sessionadmin', $sessionAdmin)
+                    ->where('id', $id)
                     ->first();
+                Log::info('biodata: ' . $biodata);
+                Log::info('transDetails: ' . $transDetails);
+                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
 
-                $results = Result2018::with('course')
-                    ->where('stud_id', $matric)
-                    ->where('sec', $sessionAdmin)
-                    ->get();
-                Log::info('Biodata: ' . $biodata);
-                Log::info('result: ' . $results);
+                $results = Result2023::with('course') // Eager load the 'course' relationship
+                    ->with(['faculty', 'department'])
+                    ->select('*') // Select all columns
+                    ->where('matric', $matric)
+                    ->where('yr_of_entry', $normalizedSecAdmin)
+                    ->get()
+                    ->makeHidden(['status']); // Hide the 'status' column
+
+                Log::info('results: ' . $results);
 
                 if ($results->isEmpty()) {
+                    // If Result2023 is empty, fallback to Result2018
+                    //$biodata = Biodata::where('matric', $matric)->first();
+                    $biodata = TransDetailsNew::with([
+                        'transInvoice' => function ($query) {
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                        },
+                        'transDetailsFiles:id,trans_details_id,file_path',
+                    ])
+                        ->where('matric', $matric)
+                        ->where('sessionadmin', $sessionAdmin)
+                        ->where('id', $id)
+                        ->first();
+
+                    // Try fetching from Result2018 first
+                    $results = Result2018::with('course')
+                        ->where('stud_id', $matric)
+                        ->where('sec', $sessionAdmin)
+                        ->get();
+
+                    if ($results->isEmpty()) {
                         // If Result2018 is empty, fallback to ResultOld
                         $biodata = TransDetailsNew::with([
                             'transInvoice' => function ($query) {
@@ -1042,8 +1088,13 @@ class DashboardController extends Controller
                         Log::info('result: ' . $results);
 
                     }
+                }
+
+                Log::info('Biodata: ' . $biodata);
+                Log::info('result: ' . $results);
+
                 return view('admin.approvedTranscript', compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender'));
-            } elseif ($startYear >= 2013 && $startYear <= 2017) {
+                        } elseif ($startYear >= 2013 && $startYear <= 2017) {
                 // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
                 $biodata = TransDetailsNew::with([
                     'transInvoice' => function ($query) {
@@ -1562,9 +1613,37 @@ class DashboardController extends Controller
                         ->where('stud_id', $matric)
                         ->where('sec', $sessionAdmin)
                         ->get();
+
+                        if ($results->isEmpty()) {
+                        // If Result2018 is empty, fallback to ResultOld
+                        $biodata = TransDetailsNew::where('matric', $matric)
+                            ->where('sessionadmin', $sessionAdmin)
+                            ->where('email', $invoiceNo)
+                            ->first();
+
+                        $results = ResultOld::with([
+                        'transInvoice' => function ($query) {
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                        },
+                        'transDetailsFiles:id,trans_details_id,file_path',
+                    ])->where('matno', $matric)
+                            ->where('sec', $sessionAdmin)
+                            ->with('course')
+                            ->get();
+
+                    }
+                        
                 }
+
+                
             } elseif ($startYear >= 2018 && $startYear <= 2022) {
-                // **2018/2019 and above: Use Result2018**
+               // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
+                $biodata = StudentRecord::where('matric', $matric)->first();
+                if (! $biodata) {
+                    Log::error('No StudentRecord found for matric: ' . $matric);
+                }
+                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
+
                 $biodata = TransDetailsNew::with([
                     'transInvoice' => function ($query) {
                         $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
@@ -1575,28 +1654,17 @@ class DashboardController extends Controller
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
-                $results = Result2018::with('course')
-                    ->where('stud_id', $matric)
-                    ->where('sec', $sessionAdmin)
-                    ->get();
-            } elseif ($startYear >= 2013 && $startYear <= 2017) {
-                // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
-                $biodata = TransDetailsNew::with([
-                    'transInvoice' => function ($query) {
-                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                    },
-                    'transDetailsFiles:id,trans_details_id,file_path',
-                ])
+                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
+
+                $results = Result2023::with('course')
+                    ->with(['faculty', 'department'])
+                    ->select('*')
                     ->where('matric', $matric)
-                    ->where('sessionadmin', $sessionAdmin)
-                    ->first();
+                    ->where('yr_of_entry', $normalizedSecAdmin)
+                    ->get()
+                    ->makeHidden(['status']);
 
-                $results = Result2018::where('stud_id', $matric)
-                    ->where('sec', $sessionAdmin)
-                    ->with('course')
-                    ->get();
-
-                if ($results->isEmpty() || ! $biodata) {
+                if ($results->isEmpty()) {
                     $biodata = TransDetailsNew::with([
                         'transInvoice' => function ($query) {
                             $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
@@ -1607,11 +1675,99 @@ class DashboardController extends Controller
                         ->where('sessionadmin', $sessionAdmin)
                         ->first();
 
-                    $results = ResultOld::where('matno', $matric)
+                    $results = Result2018::with('course')
+                        ->where('stud_id', $matric)
                         ->where('sec', $sessionAdmin)
-                        ->with('course')
                         ->get();
+
+                        if ($results->isEmpty()) {
+                        // If Result2018 is empty, fallback to ResultOld
+                        $biodata = TransDetailsNew::where('matric', $matric)
+                            ->where('sessionadmin', $sessionAdmin)
+                            ->where('email', $invoiceNo)
+                            ->first();
+
+                        $results = ResultOld::with([
+                        'transInvoice' => function ($query) {
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                        },
+                        'transDetailsFiles:id,trans_details_id,file_path',
+                    ])->where('matno', $matric)
+                            ->where('sec', $sessionAdmin)
+                            ->with('course')
+                            ->get();
+
+                    }
+                        
                 }
+
+               
+            } elseif ($startYear >= 2013 && $startYear <= 2017) {
+                 // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
+                $biodata = StudentRecord::where('matric', $matric)->first();
+                if (! $biodata) {
+                    Log::error('No StudentRecord found for matric: ' . $matric);
+                }
+                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
+
+                $biodata = TransDetailsNew::with([
+                    'transInvoice' => function ($query) {
+                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                    },
+                    'transDetailsFiles:id,trans_details_id,file_path',
+                ])
+                    ->where('matric', $matric)
+                    ->where('sessionadmin', $sessionAdmin)
+                    ->first();
+
+                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
+
+                $results = Result2023::with('course')
+                    ->with(['faculty', 'department'])
+                    ->select('*')
+                    ->where('matric', $matric)
+                    ->where('yr_of_entry', $normalizedSecAdmin)
+                    ->get()
+                    ->makeHidden(['status']);
+
+                if ($results->isEmpty()) {
+                    $biodata = TransDetailsNew::with([
+                        'transInvoice' => function ($query) {
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                        },
+                        'transDetailsFiles:id,trans_details_id,file_path',
+                    ])
+                        ->where('matric', $matric)
+                        ->where('sessionadmin', $sessionAdmin)
+                        ->first();
+
+                    $results = Result2018::with('course')
+                        ->where('stud_id', $matric)
+                        ->where('sec', $sessionAdmin)
+                        ->get();
+
+                        if ($results->isEmpty()) {
+                        // If Result2018 is empty, fallback to ResultOld
+                        $biodata = TransDetailsNew::where('matric', $matric)
+                            ->where('sessionadmin', $sessionAdmin)
+                            ->where('email', $invoiceNo)
+                            ->first();
+
+                        $results = ResultOld::with([
+                        'transInvoice' => function ($query) {
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                        },
+                        'transDetailsFiles:id,trans_details_id,file_path',
+                    ])->where('matno', $matric)
+                            ->where('sec', $sessionAdmin)
+                            ->with('course')
+                            ->get();
+
+                    }
+                        
+                }
+
+               
             } else {
                 // **Older than 2013: Use ResultOld**
                 $biodata = TransDetailsNew::with([

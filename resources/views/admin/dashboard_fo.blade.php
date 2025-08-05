@@ -411,7 +411,7 @@ setTimeout(() => row.remove(), 500);
 
                             if (awardLink) {
                                 // Create the full URL using asset helper from Laravel
-                                const fileUrl = `/storage/${awardLink}`; // Directly access the public storage path
+                                const fileUrl = `{{ config('app.url') }}/storage/${awardLink}`; // Directly access the public storage path
 
                                 console.log("Generated file URL:", fileUrl); // Log the file URL for debugging
 

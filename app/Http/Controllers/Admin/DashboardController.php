@@ -67,7 +67,7 @@ class DashboardController extends BaseAdminController
      */
     public function transreceiveDashboard()
     {
-        $records = $this->getRecordsByStatus(6, 6); // Status 6 records for Transreceive role
+        $records = $this->getRecordsByStatus(0, 0); // Status 6 records for Transreceive role
         $adminUser = $this->getAdminUser();
 
         return view('admin.transrecevedashboard', compact('records', 'adminUser'));

@@ -173,33 +173,33 @@
                                 <tbody>
 
                                     @foreach ($records as $index => $record)
-                                    @php
-    $status = [
-        0 => 'Fresh Application',
-        7 => 'Record Officer',
-        2 => 'Transcript Officer',
-        3 => 'Key in Officer',
-        4 => 'Processing Officer',
-        5 => 'Filing Officer',
-        6 => 'Help Desk',
-        8 => 'Complete Transacript Process',
-        9 => 'Dispatch to Student',
-    ];
-@endphp
+                                        @php
+                                            $status = [
+                                                0 => 'Fresh Application',
+                                                7 => 'Record Officer',
+                                                2 => 'Transcript Officer',
+                                                3 => 'Key in Officer',
+                                                4 => 'Processing Officer',
+                                                5 => 'Filing Officer',
+                                                6 => 'Help Desk',
+                                                8 => 'Complete Transacript Process',
+                                                9 => 'Dispatch to Student',
+                                            ];
+                                        @endphp
 
-@if($record->status == 0)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>{{ $record->matric }}</td>
-                                            <td>{{ $record->Surname . ' ' . $record->Othernames }}</td>
-                                            <td>{{ $record->faculty }}</td>
-                                            <td>{{ $record->department }}</td>
-                                            <td>{{ $record->degree }}</td>
-                                            <td>{{ $record->feildofinterest }}</td>
-                                            <td>{{ $status[$record->status] ?? 'Unknown Status' }}</td>
-                                            <td>
-                                                <div class="d-flex gap-2 justify-content-center">
-                                                    {{-- <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
+                                        @if ($record->status == 0)
+                                            <tr>
+                                                <td>{{ $index + 1 }}</td>
+                                                <td>{{ $record->matric }}</td>
+                                                <td>{{ $record->Surname . ' ' . $record->Othernames }}</td>
+                                                <td>{{ $record->faculty }}</td>
+                                                <td>{{ $record->department }}</td>
+                                                <td>{{ $record->degree }}</td>
+                                                <td>{{ $record->feildofinterest }}</td>
+                                                <td>{{ $status[$record->status] ?? 'Unknown Status' }}</td>
+                                                <td>
+                                                    <div class="d-flex gap-2 justify-content-center">
+                                                        {{-- <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
                                                         data-bs-target="#viewModal" data-matric="{{ $record->matric }}"
                                                         data-name="{{ $record->Surname . ' ' . $record->Othernames }}"
                                                         data-faculty="{{ $record->faculty }}"
@@ -212,51 +212,50 @@
                                                         data-copies="{{ $record->transInvoice->mth }}">
                                                         View
                                                     </button> --}}
-                                                    <button class="btn btn-primary btn-sm" onclick="{{ route('admin.transcript.details', ['id' => $record->id]) }}">
-                                                        View
-                                                    </button>
-                                                    @if ($record->file && $record->file->file_path)
-    <button class="btn btn-warning btn-sm"
-            data-bs-toggle="modal"
-            data-bs-target="#viewDocumentModal"
-            data-filepath="{{ asset($record->file->file_path) }}"
-            data-award="{{ $record->file->file_path ?? '' }}"
-            >
-        View NOR
-    </button>
-@else
-    <button class="btn btn-danger btn-sm" disabled
-            >
-        No NOR
-    </button>
-@endif
+                                                        <a class="btn btn-primary btn-sm"
+                                                            href="{{ route('admin.transcript.details', ['id' => $record->email]) }}"
+                                                            target="_blank">View</a>
 
-                                                    {{-- <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                        @if ($record->file && $record->file->file_path)
+                                                            <button class="btn btn-warning btn-sm"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#viewDocumentModal"
+                                                                data-filepath="{{ asset($record->file->file_path) }}"
+                                                                data-award="{{ $record->file->file_path ?? '' }}">
+                                                                View NOR
+                                                            </button>
+                                                        @else
+                                                            <button class="btn btn-danger btn-sm" disabled>
+                                                                No NOR
+                                                            </button>
+                                                        @endif
+
+                                                        {{-- <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
                                                         data-bs-target="#viewDocumentModal"
                                                         data-award="{{ $record->file->file_path }}">
                                                         View NOR
                                                     </button> --}}
 
-                                                    {{-- {{ dd($record) }} --}}
+                                                        {{-- {{ dd($record) }} --}}
 
-                                                    <select class="form-select form-select-sm w-auto text-nowrap"
-                                                    data-matric="{{ $record->matric }}"
-                                                    data-invoiceno="{{ $record->transInvoice->invoiceno ?? '' }}"
-                                                    onchange="updateCheque(this)">
-                                                <option value="">Select Status</option>
-                                                <option value="7">Record Officer</option>
-                                                <option value="2">Transcript Officer</option>
-                                                <option value="3">Key in Officer</option>
-                                                <option value="4">Processing Officer</option>
-                                                <option value="5">Filing Officer</option>
-                                               <option value="6">Help Desk</option>
-                                               <option value="8">Complete Transacript Process</option>
-                                               <option value="9">Dispatch to Student</option>
-                                               </select>
+                                                        <select class="form-select form-select-sm w-auto text-nowrap"
+                                                            data-matric="{{ $record->matric }}"
+                                                            data-invoiceno="{{ $record->transInvoice->invoiceno ?? '' }}"
+                                                            onchange="updateCheque(this)">
+                                                            <option value="">Select Status</option>
+                                                            <option value="7">Record Officer</option>
+                                                            <option value="2">Transcript Officer</option>
+                                                            <option value="3">Key in Officer</option>
+                                                            <option value="4">Processing Officer</option>
+                                                            <option value="5">Filing Officer</option>
+                                                            <option value="6">Help Desk</option>
+                                                            <option value="8">Complete Transacript Process</option>
+                                                            <option value="9">Dispatch to Student</option>
+                                                        </select>
 
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                         @endif
                                     @endforeach
                                 </tbody>
@@ -313,7 +312,8 @@
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-secondary"
+                                    data-bs-dismiss="modal">Close</button>
                             </div>
                         </div>
                     </div>
@@ -321,6 +321,7 @@
 
                 <script>
                     let baseURL = "{{ url('/') }}";
+
                     function updateCheque(selectElement) {
                         var selectedValue = selectElement.value;
                         var matric = selectElement.getAttribute("data-matric");
@@ -334,50 +335,50 @@
                         console.log('Selected Status value:', selectedValue); // Debugging line
 
                         fetch(baseURL + "/admin/update-cheque", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({
-                                matric: matric,
-                                invoiceno: invoiceno,
-                                cheque: selectedValue // Sending the correct field here
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                },
+                                body: JSON.stringify({
+                                    matric: matric,
+                                    invoiceno: invoiceno,
+                                    cheque: selectedValue // Sending the correct field here
+                                })
                             })
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                // If response is not OK (like 422, 500, etc)
-                                return response.json().then(err => {
-                                    console.error('Server responded with error:', err);
-                                    throw new Error('Server error');
-                                });
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                alert('Status updated successfully.');
-                                 // If record is no longer supposed to be visible (status != 0), remove it from the table
-        if (selectedValue != 0) {
-            const row = selectElement.closest('tr');
-            if (row) {
-              //  row.remove();
-              row.style.transition = 'opacity 0.5s ease';
-row.style.opacity = 0;
-setTimeout(() => row.remove(), 500);
+                            .then(response => {
+                                if (!response.ok) {
+                                    // If response is not OK (like 422, 500, etc)
+                                    return response.json().then(err => {
+                                        console.error('Server responded with error:', err);
+                                        throw new Error('Server error');
+                                    });
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.success) {
+                                    alert('Status updated successfully.');
+                                    // If record is no longer supposed to be visible (status != 0), remove it from the table
+                                    if (selectedValue != 0) {
+                                        const row = selectElement.closest('tr');
+                                        if (row) {
+                                            //  row.remove();
+                                            row.style.transition = 'opacity 0.5s ease';
+                                            row.style.opacity = 0;
+                                            setTimeout(() => row.remove(), 500);
 
-            }
-        }
-                                // Optionally reload or update your page/UI
-                            } else {
-                                alert('Failed to update Status.');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Fetch error:', error); // log it clearly
-                            alert('Something went wrong. Check console for details.');
-                        });
+                                        }
+                                    }
+                                    // Optionally reload or update your page/UI
+                                } else {
+                                    alert('Failed to update Status.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Fetch error:', error); // log it clearly
+                                alert('Something went wrong. Check console for details.');
+                            });
                     }
                 </script>
 
@@ -431,7 +432,8 @@ setTimeout(() => row.remove(), 500);
 
                             if (awardLink) {
                                 // Create the full URL using asset helper from Laravel
-                                const fileUrl = `/storage/${awardLink}`; // Directly access the public storage path
+                                const fileUrl =
+                                `{{ config('app.url') }}/storage/${awardLink}`; // Directly access the public storage path
 
                                 console.log("Generated file URL:", fileUrl); // Log the file URL for debugging
 

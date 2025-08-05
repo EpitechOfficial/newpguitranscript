@@ -268,9 +268,15 @@
                             </tr>
                         </table>
                     </div>
-                    <div class="watermark-light">
-                        {{ $biodata->mark ?? 'Default...' }}
-                    </div>
+                    @if ($biodata->ecopy_email)
+                        <div class="watermark">
+                            {{ $biodata->ecopy_address ?? 'Default...' }}
+                        </div>
+                    @else
+                        <div class="watermark">
+                            {{ $biodata->getPrimaryCourier()?->address ?? 'Default...' }}
+                        </div>
+                    @endif
                     <div class="afterHead">
                         <p class="bb text-center"><strong>PERMANENT POSTGRADUATE STUDENT'S ACADEMIC RECORD AND
                                 TRANSCRIPT</strong></p>

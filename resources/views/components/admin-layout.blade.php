@@ -108,36 +108,94 @@
 
                 <!-- Menu Start -->
                 <div class="menu-container flex-grow-1">
+                    @php
+                        $role = (session('admin_user')->role) ?? null;
+                    @endphp
 
                     <ul id="menu" class="menu">
-                        <li>
+                        <!-- Dashboard - Available to all roles -->
+                        {{-- <li>
                             <a href="{{ route('admin.dashboard') }}" data-href="#">
                                 <i data-acorn-icon="home" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Dashboards</span>
+                                <span class="label">Dashboard</span>
                             </a>
+                        </li> --}}
 
+                        @if($role == 2) {{-- TO Role --}}
+                        <li>
+                            <a href="{{ route('admin.dashboard.to') }}" data-href="#">
+                                <i data-acorn-icon="file-text" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Transcript Officer</span>
+                            </a>
                         </li>
+                        @endif
 
+                        @if($role == 3) {{-- KI Role --}}
+                        <li>
+                            <a href="{{ route('admin.dashboard.ki') }}" data-href="#">
+                                <i data-acorn-icon="keyboard" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Keying In</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if($role == 4) {{-- PO Role --}}
+                        <li>
+                            <a href="{{ route('admin.dashboard_po') }}" data-href="#">
+                                <i data-acorn-icon="settings" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Processing Officer</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if($role == 5) {{-- FO Role --}}
+                        <li>
+                            <a href="{{ route('admin.dashboard.fo') }}" data-href="#">
+                                <i data-acorn-icon="check-circle" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Filing Officer</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if($role == 6) {{-- Transreceive Role --}}
+                        <li>
+                            <a href="{{ route('admin.transrecevedashboard') }}" data-href="#">
+                                <i data-acorn-icon="inbox" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Transcript Receive</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if($role == 7) {{-- Record Processed Role --}}
                         <li>
                             <a href="{{ route('admin.recordProcesseds') }}" data-href="#">
-                                <i data-acorn-icon="screen" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Processed Record</span>
+                                <i data-acorn-icon="home" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Record Processed</span>
                             </a>
                         </li>
+                        @endif
+
+                        <!-- Common menu items for all roles -->
+                        @if($role == 7 || $role == 2) {{-- Record Processed and Approved roles --}}
                         <li>
                             <a href="{{ route('admin.recordApproved') }}" data-href="#">
-                                <i data-acorn-icon="screen" class="icon" data-acorn-size="18"></i>
+                                <i data-acorn-icon="check" class="icon" data-acorn-size="18"></i>
                                 <span class="label">Approved Record</span>
                             </a>
                         </li>
+                        @endif
+
+                        <!-- Edit Result - Available to specific roles -->
+                        @if(in_array($role, [3, 2, 7])) {{-- KI, PO, FO roles --}}
                         <li>
                             <a href="{{ route('admin.edit_transcript_realtime') }}" data-href="#">
-                                <i data-acorn-icon="screen" class="icon" data-acorn-size="18"></i>
+                                <i data-acorn-icon="edit" class="icon" data-acorn-size="18"></i>
                                 <span class="label">Edit Result</span>
                             </a>
                         </li>
+                        @endif
 
-
+                     
 
                     </ul>
                 </div>

@@ -377,11 +377,7 @@
                                     <input type="text" id="destination_address_${i}" name="destination_address[]"
                                         class="form-control" placeholder="Enter destination address for copy ${i}" ${requiredAttr}>
                                 </div>
-                                <div class="col form-group">
-                                    <label for="destination2_${i}">Destination 2 (optional)</label>
-                                    <input type="text" id="destination2_${i}" name="destination2[]" class="form-control"
-                                        placeholder="Enter second address for copy ${i} (optional)">
-                                </div>
+                               
                             </div>
                         </div>
                     `;

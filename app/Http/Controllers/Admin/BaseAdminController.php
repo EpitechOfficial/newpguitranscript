@@ -116,7 +116,7 @@ class BaseAdminController extends Controller
                       });
                 break;
             case 7: // Record Processed role
-                
+                // $query->whereHas('couriers');
                 break;
         }
 

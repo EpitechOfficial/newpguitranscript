@@ -59,8 +59,8 @@
             border-bottom: 2px solid black;
         }
 
-        .afterHead {
-            /* padding-top: 20rem !important; */
+        .afterHead2 {
+            padding-top: 20rem !important;
         }
 
         .info-container {
@@ -216,6 +216,7 @@
                         use Illuminate\Support\Str;
                     @endphp
 
+ @if ($biodata->ecopy_email)
                     <div class="header">
                         <div class="title">
                             <h1>UNIVERSITY OF IBADAN, IBADAN, NIGERIA</h1>
@@ -247,20 +248,18 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    @if (Str::contains($biodata->transInvoice->purpose, 'E-Copy') ||
-                            Str::contains($biodata->transInvoice->purpose, 'Soft Copy'))
+                    @if ($biodata->ecopy_email)
                         <div class="watermark">
                             {{ $biodata->ecopy_address ?? 'Default...' }}
                         </div>
-                    @else
-                        <div class="watermark">
-                            {{ $biodata->couriers->address ?? 'Default...' }}
-                        </div>
                     @endif
-
+ @if ($biodata->ecopy_email)
                     <div class="afterHead">
-
+@else
+<div class="afterHead afterHead2">
+@endif
                         <p class="bb text-center"><strong>PERMANENT POSTGRADUATE STUDENT'S ACADEMIC RECORD AND
                                 TRANSCRIPT</strong> </p>
 
