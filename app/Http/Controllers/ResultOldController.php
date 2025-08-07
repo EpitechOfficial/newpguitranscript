@@ -24,10 +24,42 @@ class ResultOldController extends Controller
             'file' => 'required|mimes:xls,xlsx,csv'
         ]);
 
-        Excel::import(new ResultOldImport, $request->file('file'));
+        try {
+            $import = new ResultOldImport();
+            Excel::import($import, $request->file('file'));
 
-        // return back()->with('success', 'Records uploaded successfully.');
-        return redirect()->route('admin.dashboard.ki')->with('success', 'Records uploaded successfully.');
+            $results = session('import_results', []);
+            
+            // Build success message
+            $message = "Import completed!\n";
+            $message .= "Total rows processed: " . ($results['total_rows'] ?? 0) . "\n";
+            $message .= "Successfully imported: " . ($results['success_count'] ?? 0) . " records\n";
+            
+            if (!empty($results['duplicates'])) {
+                $message .= "Duplicates found: " . count($results['duplicates']) . " records\n";
+            }
+            
+            if (!empty($results['errors'])) {
+                $message .= "Errors: " . count($results['errors']) . " records\n";
+            }
+
+            // Store detailed results for display
+            session([
+                'import_duplicates' => $results['duplicates'] ?? [],
+                'import_errors' => $results['errors'] ?? [],
+                'import_summary' => [
+                    'total_rows' => $results['total_rows'] ?? 0,
+                    'success_count' => $results['success_count'] ?? 0,
+                    'duplicate_count' => count($results['duplicates'] ?? []),
+                    'error_count' => count($results['errors'] ?? [])
+                ]
+            ]);
+
+            return redirect()->route('result_old.upload_form')->with('success', $message);
+        } catch (\Exception $e) {
+            return redirect()->route('result_old.upload_form')
+                ->with('error', 'Import failed: ' . $e->getMessage());
+        }
     }
 
     // Real-time transcript editing page
@@ -36,26 +68,49 @@ class ResultOldController extends Controller
         return view('admin.edit_transcript_realtime');
     }
 
-    // AJAX: fetch transcript by matric
-    public function fetchTranscriptRealtime(Request $request)
+    // AJAX: fetch available sessions for a matric number
+    public function fetchSessions(Request $request)
     {
         $matric = $request->query('matric');
         if (!$matric) {
+            return response()->json(['sessions' => []]);
+        }
+
+        $sessions = ResultOld::where('matno', $matric)
+            ->distinct()
+            ->pluck('sec')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        return response()->json(['sessions' => $sessions]);
+    }
+
+    // AJAX: fetch transcript by matric and sec
+    public function fetchTranscriptRealtime(Request $request)
+    {
+        $matric = $request->query('matric');
+        $sec = $request->query('sec');
+        
+        if (!$matric || !$sec) {
             return response()->json(['results' => []]);
         }
+        
         $record = TransDetailsNew::where('matric', $matric)->first();
-        $fullName = $record->Surname . ' ' . $record->Othernames;
-
+        $fullName = $record ? ($record->Surname . ' ' . $record->Othernames) : 'N/A';
 
         $results = ResultOld::where('matno', $matric)
+            ->where('sec', $sec)
             ->with('course')
             ->get();
+            
         if ($results->isEmpty()) {
             return response()->json(['results' => []]);
         }
-        $student = $results->first();
+        
         $data = [
             'matric' => $matric,
+            'sec' => $sec,
             'name' => $fullName,
             'results' => $results->map(function($r) {
                 return [
@@ -70,10 +125,8 @@ class ResultOldController extends Controller
                 ];
             }),
         ];
-        Log::error('data '.$results);
+        
         return response()->json($data);
-
-
     }
 
     // AJAX: update a course result field
@@ -83,10 +136,9 @@ class ResultOldController extends Controller
         $matric = $request->input('matric');
         $field = $request->input('field');
         $value = $request->input('value');
-                        Log::info('value: ' . $value);
+        Log::info('value: ' . $value);
 
-        $result = ResultOld::where('matno', $matric);
-                    $course = \App\Models\CourseOnline::where('course', $newCode)->first();
+        $result = ResultOld::where('matno', $matric)->first();
 
         if (!$result) {
             return response()->json(['success' => false, 'message' => 'Result not found.']);
@@ -141,7 +193,10 @@ class ResultOldController extends Controller
     public function saveTranscriptRealtime(Request $request)
     {
         $rows = $request->input('rows', []);
+        $matric = $request->input('matric');
+        $sec = $request->input('sec');
         $errors = [];
+        
         foreach ($rows as $row) {
             $result = \App\Models\ResultOld::find($row['result_id']);
             if ($result) {
@@ -161,8 +216,8 @@ class ResultOldController extends Controller
                     // Only create if it doesn't exist
                     $course = new \App\Models\CourseOnline();
                     $course->course = $newCode;
-                    if (isset($row['title'])) $course->course_title = $row['course_title'];
-                    if (isset($row['unit'])) $course->c_unit = $row['c_unit'];
+                    if (isset($row['course_title'])) $course->course_title = $row['course_title'];
+                    if (isset($row['c_unit'])) $course->c_unit = $row['c_unit'];
                     if (isset($row['status'])) $course->status = $row['status'];
                     $course->save();
                 }
@@ -174,6 +229,39 @@ class ResultOldController extends Controller
         }
         return response()->json([
             'success' => count($errors) === 0,
+            'errors' => $errors,
+        ]);
+    }
+
+    public function deleteTranscriptRealtime(Request $request)
+    {
+        $resultIds = $request->input('result_ids', []);
+        $matric = $request->input('matric');
+        $sec = $request->input('sec');
+        $errors = [];
+        $deletedCount = 0;
+
+        foreach ($resultIds as $resultId) {
+            $result = ResultOld::where('id', $resultId)
+                ->where('matno', $matric)
+                ->where('sec', $sec)
+                ->first();
+
+            if ($result) {
+                try {
+                    $result->delete();
+                    $deletedCount++;
+                } catch (\Exception $e) {
+                    $errors[] = "Failed to delete result ID {$resultId}: " . $e->getMessage();
+                }
+            } else {
+                $errors[] = "Result not found for ID {$resultId}";
+            }
+        }
+
+        return response()->json([
+            'success' => count($errors) === 0,
+            'deleted_count' => $deletedCount,
             'errors' => $errors,
         ]);
     }
