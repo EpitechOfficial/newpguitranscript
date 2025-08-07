@@ -186,7 +186,8 @@
                                                         <button class="btn btn-success btn-sm"
                                                             data-matric="{{ $record->matric }}"
                                                             data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="approveRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}','{{ $record->ecopy_email }}','{{ $record->id }}')">
+                                                            data-type="{{ $record->ecopy_email ? 'E-copy' : 'Others' }}"
+                                                            onclick="approveRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}','{{ $record->ecopy_email }}','{{ $record->id }}', '{{ $record->ecopy_email ? 'E-copy' : 'Others' }}')">
                                                             Approve
                                                         </button>
                                                         <button class="btn btn-danger btn-sm"
@@ -329,7 +330,7 @@
 
 
                 <script>
-                    function approveRecord(button, matric, sessionadmin, ecopy_email, id) {
+                    function approveRecord(button, matric, sessionadmin, ecopy_email, id, type) {
                         console.log("Processing record for:", matric, sessionadmin);
 
                         const confirmationText = ecopy_email ?
@@ -352,6 +353,7 @@
                                 button.disabled = true;
                                 button.innerHTML =
                                     `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
+
 
                                 const url = '{{ route('admin.transcriptApprove') }}';
 
@@ -386,6 +388,13 @@
                                 idInput.name = 'id';
                                 idInput.value = id;
                                 form.appendChild(idInput);
+
+                                // Add transcript type (E-copy or Others)
+                                const typeInput = document.createElement('input');
+                                typeInput.type = 'hidden';
+                                typeInput.name = 'transcript_type';
+                                typeInput.value = type;
+                                form.appendChild(typeInput);
 
                                 console.log("Submitting form to:", url);
 

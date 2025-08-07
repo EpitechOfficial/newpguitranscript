@@ -116,7 +116,13 @@ class BaseAdminController extends Controller
                       });
                 break;
             case 7: // Record Processed role
-                // $query->whereHas('couriers');
+                $query->select('*')
+                      ->whereIn('id', function($subquery) use ($status) {
+                          $subquery->select(DB::raw('MAX(id)'))
+                                   ->from('trans_details_new')
+                                   ->where('status', $status)
+                                   ->groupBy('ecopy_email');
+                      });
                 break;
         }
 

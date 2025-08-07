@@ -120,12 +120,15 @@
             </div>
         </div>
         <!-- Title and Top Buttons End -->
-        @if(session('success'))
-        <div id="success-alert" class="alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 shadow-lg" role="alert" style="opacity: 0; transform: translateX(100%); transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; z-index: 1050;">
-            <strong>Success:</strong> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+        @if (session('success'))
+            <div id="success-alert"
+                class="alert alert-success alert-dismissible fade show position-fixed top-0 end-0 m-3 shadow-lg"
+                role="alert"
+                style="opacity: 0; transform: translateX(100%); transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; z-index: 1050;">
+                <strong>Success:</strong> {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
 
 
 
@@ -163,33 +166,66 @@
                                         <th>Department</th>
                                         <th>Degree</th>
                                         <th>Field of Interest</th>
+                                        <th>Courier Address</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($records as $index => $record)
-                                        <tr>
-                                            <td>{{ $index + 1 }}</td>
-                                            <td>{{ $record->matric }}</td>
-                                            <td>{{ $record->Surname . ' ' . $record->Othernames }}</td>
-                                            <td>{{ $record->faculty }}</td>
-                                            <td>{{ $record->department }}</td>
-                                            <td>{{ $record->degree }}</td>
-                                            <td>{{ $record->feildofinterest }}</td>
-                                            <td>
-                                                <div class="d-flex gap-2 justify-content-center">
+                                    @php $sn = 1; @endphp
+                                    @foreach ($records as $record)
+                                        @if ($record->couriers->isEmpty())
+                                            <tr>
+                                                <td>{{ $sn++ }}</td>
+                                                <td>{{ $record->matric }}</td>
+                                                <td>{{ $record->Surname . ' ' . $record->Othernames }}</td>
+                                                <td>{{ $record->faculty }}</td>
+                                                <td>{{ $record->department }}</td>
+                                                <td>{{ $record->degree }}</td>
+                                                <td>{{ $record->feildofinterest }}</td>
+                                                <td><em>No Courier Details Or E-Copy</em></td>
+                                                <td>
+                                                    <div class="d-flex gap-2 justify-content-center">
 
-                                                    <button class="btn btn-success btn-sm w-auto text-nowrap"
-                                                        data-matric="{{ $record->matric }}"
-                                                        data-sessionadmin="{{ $record->sessionadmin }}"
-                                                        onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}')">
-                                                        View Transcript
-                                                    </button>
+                                                        <button class="btn btn-success btn-sm w-auto text-nowrap"
+                                                            data-matric="{{ $record->matric }}"
+                                                            data-sessionadmin="{{ $record->sessionadmin }}"
+                                                            data-courieraddress="{{ $courier->address ?? '' }}"
+                                                            onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->id }}', '{{ $courier->address ?? '' }}')">
+                                                            View Transcript
+                                                        </button>
 
-                                                </div>
-                                            </td>
-                                        </tr>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @else
+                                            @foreach ($record->couriers as $courier)
+                                                <tr>
+                                                    <td>{{ $sn++ }}</td>
+                                                    <td>{{ $record->matric }}</td>
+                                                    <td>{{ $record->Surname . ' ' . $record->Othernames }}</td>
+                                                    <td>{{ $record->faculty }}</td>
+                                                    <td>{{ $record->department }}</td>
+                                                    <td>{{ $record->degree }}</td>
+                                                    <td>{{ $record->feildofinterest }}</td>
+                                                    <td>{{ $courier->address }}</td>
+                                                    <td>
+                                                        <div class="d-flex gap-2 justify-content-center">
+
+                                                            <button class="btn btn-success btn-sm w-auto text-nowrap"
+                                                                data-matric="{{ $record->matric }}"
+                                                                data-sessionadmin="{{ $record->sessionadmin }}"
+                                                                data-sessionadmin="{{ $record->sessionadmin }}"
+                                                                onclick="processTranscript(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->id }}', '{{ $courier->address ?? '' }}')">
+                                                                View Transcript
+                                                            </button>
+
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        @endif
                                     @endforeach
+                                    
                                 </tbody>
                             </table>
 
@@ -227,7 +263,7 @@
                     </div>
                 </div>
 
-{{--
+                {{--
                 <div class="modal fade" id="viewDocumentModal" tabindex="-1" aria-labelledby="viewDocumentModalLabel"
                     aria-hidden="true">
                     <div class="modal-dialog modal-lg">
@@ -259,13 +295,10 @@
         </div>
     </div>
 
-     <script>
-        function processTranscript(button, matric, sessionadmin) {
-            console.log("Processing record for:", matric, sessionadmin); // Debugging log
+    <script>
+        function processTranscript(button, matric, sessionadmin, id, courierAddress = '') {
+            console.log("Processing record for:", matric, sessionadmin, courierAddress); // Debugging log
 
-            button.disabled = true;
-            button.innerHTML =
-                `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
             const url = '{{ route('admin.processTranscript') }}'; // Named route for the backend action
 
             // Create a form dynamically to submit via POST
@@ -294,13 +327,26 @@
             sessionAdminInput.value = sessionadmin;
             form.appendChild(sessionAdminInput);
 
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'id';
+            idInput.value = id;
+            form.appendChild(idInput);
+
+            // Add courier address if provided
+            if (courierAddress) {
+                const courierAddressInput = document.createElement('input');
+                courierAddressInput.type = 'hidden';
+                courierAddressInput.name = 'courier_address';
+                courierAddressInput.value = courierAddress;
+                form.appendChild(courierAddressInput);
+            }
+
             console.log("Submitting form to:", url); // Debugging log
 
             // Append form to the body and submit it
             document.body.appendChild(form);
             form.submit();
-
-
         }
 
         window.addEventListener("pageshow", function() {
@@ -332,26 +378,26 @@
     </script>
 
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let alert = document.getElementById('success-alert');
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let alert = document.getElementById('success-alert');
 
-        if (alert) {
-            // Fade in and Slide in from right
-            setTimeout(() => {
-                alert.style.opacity = 1;
-                alert.style.transform = 'translateX(0)';
-            }, 100); // Slight delay for smooth effect
+            if (alert) {
+                // Fade in and Slide in from right
+                setTimeout(() => {
+                    alert.style.opacity = 1;
+                    alert.style.transform = 'translateX(0)';
+                }, 100); // Slight delay for smooth effect
 
-            // Fade out and Slide out to the right after 5 seconds
-            setTimeout(() => {
-                alert.style.opacity = 0;
-                alert.style.transform = 'translateX(100%)';
-                setTimeout(() => alert.remove(), 500); // Remove after fade-out and slide-out
-            }, 5000);
-        }
-    });
-</script>
+                // Fade out and Slide out to the right after 5 seconds
+                setTimeout(() => {
+                    alert.style.opacity = 0;
+                    alert.style.transform = 'translateX(100%)';
+                    setTimeout(() => alert.remove(), 500); // Remove after fade-out and slide-out
+                }, 5000);
+            }
+        });
+    </script>
 
 
 

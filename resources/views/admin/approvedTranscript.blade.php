@@ -353,7 +353,7 @@
                             <div class="test mt">
 
                                 <div class="sign">
-                                    <img src="{{ asset('assets/img/ProvostSign.png') }}" alt="" srcset="">
+                                    <img src="{{ $biodata->status == 8 ? asset('assets/img/ProvostSign.png') : ''}}" alt="Not Approved" srcset="">
                                     <hr>
                                     <p>
 
@@ -361,7 +361,7 @@
                                     </p>
                                 </div>
                                 <div class="sign">
-                                    <img src="{{ asset('assets/img/DR-Transcript.png') }}" alt=""
+                                    <img src="{{$biodata->status == '8' ? asset('assets/img/DR-Transcript.png') : '' }}" alt="Not Approved"
                                         srcset="">
                                     <hr>
                                     <p>DEPUTY REGISTRAR <br>EXAMS AND RECORDS, <br>POSTGRADUATE COLLEGE</p>
@@ -377,7 +377,7 @@
 
                     <div class="page-break"></div>
 
-                    @if ($biodata->ecopy_email)
+                    {{-- @if ($biodata->ecopy_email) --}}
                         <div class="letter">
                             <div class="header">
                                 <div class="title">
@@ -416,7 +416,7 @@
                                             class="underline">records@pgcollege.ui.edu.ng</span></strong> </p>
                                 <div>
                                     <p class="bold mb-3">13 June, 2024</p>
-                                    <p class="add-width mb-4">{{ $biodata->ecopy_address ?? 'N/A' }} </p>
+                                    <p class="add-width mb-4">{{ $courierAddress ?? $biodata->ecopy_address ?? 'N/A' }}</p>
 
                                     <p class="bold mb-2">Academic Transcript:
                                         {{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}
@@ -445,7 +445,7 @@
 
 
                         </div>
-                    @endif
+                    {{-- @endif --}}
 
                 </div>
 
