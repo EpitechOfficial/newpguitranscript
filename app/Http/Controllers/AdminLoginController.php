@@ -49,6 +49,8 @@ class AdminLoginController extends Controller
     private function redirectBasedOnRole($user)
     {
         switch ($user->role) {
+            case 1:
+                return redirect()->route('admin.icthead.dashboard');
             case 7:
                 return redirect()->route('admin.recordProcesseds');
             case 2:

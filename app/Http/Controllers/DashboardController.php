@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
@@ -472,10 +473,10 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-            'transInvoice' => function ($query) {
-                $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
-            },
-        ])
+                'transInvoice' => function ($query) {
+                    $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
+                },
+            ])
             ->get();
 
         return view('admin.dashboard', ['records' => $records]); // Adjust the view path as necessary
@@ -489,10 +490,10 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-            'transInvoice' => function ($query) {
-                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); // Select only necessary fields
-            },
-        ])
+                'transInvoice' => function ($query) {
+                    $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); // Select only necessary fields
+                },
+            ])
             ->get();
 
         return view('admin.transrecevedashboard', ['records' => $records]); // Adjust the view path as necessary
@@ -607,113 +608,53 @@ class DashboardController extends Controller
             $startYear = intval($matches[1]);
             $endYear   = intval($matches[2]);
 
-            if ($startYear >= 2023) {
-                // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
-                $biodata = StudentRecord::where('matric', $matric)->first();
-                if (! $biodata) {
-                    Log::error('No StudentRecord found for matric: ' . $matric);
-                }
-                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
+            $biodata = StudentRecord::where('matric', $matric)->first();
+            if (! $biodata) {
+                Log::error('No StudentRecord found for matric: ' . $matric);
+            }
+            $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
 
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
-                Log::info('biodata: ' . $biodata);
-                $gender = $biodata->sex ?? 'N/A';
+            $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
+            Log::info('biodata: ' . $biodata);
+            $gender = $biodata->sex ?? 'N/A';
 
-                $results = Result2023::with('course') // Eager load the 'course' relationship
-                    ->with(['faculty', 'department'])
-                    ->select('*') // Select all columns
-                    ->where('matric', $matric)
-                    ->where('yr_of_entry', $normalizedSecAdmin)
-                    ->get()
-                    ->makeHidden(['status']); // Hide the 'status' column
+            $results = Result2023::with('course') // Eager load the 'course' relationship
+                ->with(['faculty', 'department'])
+                ->select('*') // Select all columns
+                ->where('matric', $matric)
+                ->where('yr_of_entry', $normalizedSecAdmin)
+                ->get()
+                ->makeHidden(['status']); // Hide the 'status' column
 
-                Log::info('results: ' . $results);
+            $rendition = DB::table('rendition')
+                ->where('dept', $results->first()->dept ?? null)
+                ->where('degree', $results->first()->degree ?? null)
+                ->where('specialization', $results->first()->field ?? null)
+                ->first();
+            $degreeAwarded = $rendition->naration ?? 'Not Specified';
+            
+            $programCgpa = DB::table('programme_cgpa')
+                ->where('degree_id', $results->first()->degree ?? null)
+                ->first();
+            $program = $programCgpa->type ?? 'Not Specified';
 
-                if ($results->isEmpty()) {
-                    // If Result2023 is empty, fallback to Result2018
-                    //$biodata = Biodata::where('matric', $matric)->first();
-                    $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
+            $academicData = $this->calculateAcademicMetrics($results, $program);
+            $cgpa = $academicData['cgpa'] ?? 'N/A';
+            Log::info('academicData: ' . json_encode($academicData));
 
-                    // Try fetching from Result2018 first
-                    $results = Result2018::with('course')
-                        ->where('stud_id', $matric)
-                        ->where('sec', $sessionAdmin)
-                        ->get();
+            Log::info('results: ' . $results);
 
-                    if ($results->isEmpty()) {
-                        // If Result2018 is empty, fallback to ResultOld
-                        $records = TransDetailsNew::where('matric', $matric)
-                            ->where('sessionadmin', $sessionAdmin)
-                            ->where('email', $invoiceNo)
-                            ->first();
-
-                        $results = ResultOld::where('matno', $matric)
-                            ->where('sec', $sessionAdmin)
-                            ->with('course')
-                            ->get();
-
-                        return view('admin.transcript_old', compact('records', 'results'));
-
-                    }
-                    return view('admin.transcript', compact('biodata', 'results', 'gender'));
-
-                }
-                return view('admin.transcript', compact('biodata', 'results', 'gender'));
-
-            } elseif ($startYear >= 2018 && $startYear <= 2022) {
-                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
-
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
-                Log::info('biodata: ' . $biodata);
-                $gender = $biodata->sex ?? 'N/A';
-
-                $results = Result2023::with('course') // Eager load the 'course' relationship
-                    ->with(['faculty', 'department'])
-                    ->select('*') // Select all columns
-                    ->where('matric', $matric)
-                    ->where('yr_of_entry', $normalizedSecAdmin)
-                    ->get()
-                    ->makeHidden(['status']); // Hide the 'status' column
-
-                Log::info('results: ' . $results);
-
-                if ($results->isEmpty()) {
-                    // If Result2023 is empty, fallback to Result2018
-                    //$biodata = Biodata::where('matric', $matric)->first();
-                    $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
-
-                    // Try fetching from Result2018 first
-                    $results = Result2018::with('course')
-                        ->where('stud_id', $matric)
-                        ->where('sec', $sessionAdmin)
-                        ->get();
-
-                    if ($results->isEmpty()) {
-                        // If Result2018 is empty, fallback to ResultOld
-                        $records = TransDetailsNew::where('matric', $matric)
-                            ->where('sessionadmin', $sessionAdmin)
-                            ->where('email', $invoiceNo)
-                            ->first();
-
-                        $results = ResultOld::where('matno', $matric)
-                            ->where('sec', $sessionAdmin)
-                            ->with('course')
-                            ->get();
-
-                        return view('admin.transcript_old', compact('records', 'results'));
-
-                    }
-                    return view('admin.transcript', compact('biodata', 'results', 'gender'));
-
-                }
-                return view('admin.transcript', compact('biodata', 'results', 'gender'));
-            } elseif ($startYear >= 2013 && $startYear <= 2017) {
-                // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
+            if ($results->isEmpty()) {
+                // If Result2023 is empty, fallback to Result2018
+                //$biodata = Biodata::where('matric', $matric)->first();
+                 $degreeAwarded = 'Not Specified';
+                 $cgpa = 'N/A';
                 $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
 
-                $results = Result2018::where('stud_id', $matric)
+                // Try fetching from Result2018 first
+                $results = Result2018::with('course')
+                    ->where('stud_id', $matric)
                     ->where('sec', $sessionAdmin)
-                    ->with('course')
                     ->get();
 
                 if ($results->isEmpty()) {
@@ -730,24 +671,9 @@ class DashboardController extends Controller
 
                     return view('admin.transcript_old', compact('records', 'results'));
                 }
-                Log::info('Biodata: ' . $biodata);
-                Log::info('result: ' . $results);
-
-                return view('admin.transcript', compact('biodata', 'results'));
-            } else {
-                // **Older than 2013: Use ResultOld**
-                $records = TransDetailsNew::where('matric', $matric)
-                    ->where('sessionadmin', $sessionAdmin)
-                    ->where('email', $invoiceNo)
-                    ->first();
-
-                $results = ResultOld::where('matno', $matric)
-                    ->where('sec', $sessionAdmin)
-                    ->with('course')
-                    ->get();
-
-                return view('admin.transcript_old', compact('records', 'results'));
+                return view('admin.transcript', compact('biodata', 'results', 'gender'));
             }
+            return view('admin.transcript', compact('biodata', 'results', 'gender', 'degreeAwarded', 'cgpa'));
 
             // // **CGPA Calculation (for 2013 and above)**
             // $totalGradePoints = 0;
@@ -1012,7 +938,6 @@ class DashboardController extends Controller
                         ->get();
                     Log::info('Biodata: ' . $biodata);
                     Log::info('result: ' . $results);
-
                 }
             }
 
@@ -1092,7 +1017,6 @@ class DashboardController extends Controller
             Log::info("Updated {$affectedRows} transcript record(s)");
 
             return redirect()->route('admin.dashboard.to')->with('success', "Successfully updated {$affectedRows} transcript record(s) for approval.");
-
         } catch (\Exception $e) {
             Log::error('Error submitting transcript: ' . $e->getMessage());
             return back()->with('error', 'An error occurred while submitting the transcript. Please try again.');
@@ -1109,7 +1033,7 @@ class DashboardController extends Controller
                 'matric'         => 'required',
                 'sessionadmin'   => 'required',
                 'id'             => 'required',
-                'transcript_type'=> 'nullable|string',
+                'transcript_type' => 'nullable|string',
             ]);
 
             $transcriptType = $request->input('transcript_type');
@@ -1245,10 +1169,10 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-            'transInvoice' => function ($query) {
-                $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
-            },
-        ])
+                'transInvoice' => function ($query) {
+                    $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
+                },
+            ])
             ->get();
 
         return view('admin.recordProcessed', ['records' => $records]); // Adjust the view path as necessary
@@ -1279,119 +1203,15 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-            'transInvoice' => function ($query) {
-                $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
-            },
-        ])
+                'transInvoice' => function ($query) {
+                    $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
+                },
+            ])
             ->get();
 
         return view('track', ['records' => $records]); // Adjust the view path as necessary
 
     }
-
-    //  public function processTranscript(Request $request)
-    // {
-
-    //     $matric = $request->input('matric');
-    //     $sessionAdmin = $request->input('sessionadmin');
-
-    //     $transDetails = TransDetailsNew::where('matric', $matric)
-    //     ->where('sessionadmin', $sessionAdmin)
-    //     ->first();
-
-    //     $cgpa = $transDetails->award;
-    //     $degreeAwarded = $transDetails->programme;
-    //     $gender = $transDetails->sex ?? 'N/A';
-
-    //     Log::info("Processing Transcript for matric: $matric, sessionAdmin: $sessionAdmin");
-
-    //     if (preg_match('/^(\d{4})\/(\d{4})$/', $sessionAdmin, $matches)) {
-    //         $startYear = intval($matches[1]);
-    //         $endYear = intval($matches[2]);
-
-    //         if ($startYear >= 2023) {
-    //             // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
-    //             $biodata = StudentRecord::where('matric', $matric)->first();
-    //             if (!$biodata) {
-    //                 Log::error('No StudentRecord found for matric: ' . $matric);
-    //             }
-    //             $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
-
-    //             $transDetail = TransDetailsNew::where('matric', $matric)->first();
-    //             Log::info('biodata: ' . $biodata);
-    //             Log::info('transDetails: ' . $transDetail);
-    //             $gender = $biodata->sex ?? $transDetail->sex ?? 'N/A';
-
-    //             $results = Result2023::with('course') // Eager load the 'course' relationship
-    //             ->with(['faculty', 'department'])
-    //                 ->select('*') // Select all columns
-    //                 ->where('matric', $matric)
-    //                 ->where('yr_of_entry', $normalizedSecAdmin)
-    //                 ->get()
-    //                 ->makeHidden(['status']); // Hide the 'status' column
-
-    //             Log::info('results: ' . $results);
-
-    //             if ($results->isEmpty()) {
-    //                 // If Result2023 is empty, fallback to Result2018
-    //                 $biodata = Biodata::where('matric', $matric)->first();
-
-    //                 // Try fetching from Result2018 first
-    //                 $results = Result2018::with('course')
-    //                     ->where('stud_id', $matric)
-    //                     ->where('sec', $sessionAdmin)
-    //                     ->get();
-    //             }
-
-    //         } elseif ($startYear >= 2018 && $startYear <= 2022) {
-    //             // **2018/2019 and above: Use Result2018**
-    //             $biodata = Biodata::where('matric', $matric)->first();
-
-    //             $results = Result2018::with('course')
-    //                 ->where('stud_id', $matric)
-    //                 ->where('sec', $sessionAdmin)
-    //                 ->get();
-
-    //         } elseif ($startYear >= 2013 && $startYear <= 2017) {
-    //             // **2013/2014 to 2016/2017: Check Result2018 first, fallback to ResultOld**
-    //             $biodata = Biodata::where('matric', $matric)->first();
-
-    //             $results = Result2018::where('stud_id', $matric)
-    //                 ->where('sec', $sessionAdmin)
-    //                 ->with('course')
-    //                 ->get();
-
-    //             if ($results->isEmpty() || !$biodata) {
-    //                 // If Result2018 is empty, fallback to ResultOld
-    //                 $biodata = TransDetailsNew::where('matric', $matric)
-    //                     ->where('sessionadmin', $sessionAdmin)
-    //                     ->first();
-
-    //                 $results = ResultOld::where('matno', $matric)
-    //                     ->where('sec', $sessionAdmin)
-    //                     ->with('course')
-    //                     ->get();
-
-    //             }
-
-    //         } else {
-    //             // **Older than 2013: Use ResultOld**
-    //             $biodata = TransDetailsNew::where('matric', $matric)
-    //                 ->where('sessionadmin', $sessionAdmin)
-    //                 ->first();
-
-    //             $results = ResultOld::where('matno', $matric)
-    //                 ->where('sec', $sessionAdmin)
-    //                 ->with('course')
-    //                 ->get();
-
-    //         }
-    //         return view('admin.approvedTranscript', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender'));
-
-    //     }
-
-    // }
-
     public function show(string $id)
     {
         //
@@ -1442,14 +1262,30 @@ class DashboardController extends Controller
             $startYear = intval($matches[1]);
             $endYear   = intval($matches[2]);
 
-            if ($startYear >= 2023) {
-                // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
-                $biodata = StudentRecord::where('matric', $matric)->first();
-                if (! $biodata) {
-                    Log::error('No StudentRecord found for matric: ' . $matric);
-                }
-                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
 
+            $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
+
+            $biodata = TransDetailsNew::with([
+                'transInvoice' => function ($query) {
+                    $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                },
+                'transDetailsFiles:id,trans_details_id,file_path',
+            ])
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->first();
+
+            $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
+
+            $results = Result2023::with('course')
+                ->with(['faculty', 'department'])
+                ->select('*')
+                ->where('matric', $matric)
+                ->where('yr_of_entry', $normalizedSecAdmin)
+                ->get()
+                ->makeHidden(['status']);
+
+            if ($results->isEmpty()) {
                 $biodata = TransDetailsNew::with([
                     'transInvoice' => function ($query) {
                         $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
@@ -1460,200 +1296,30 @@ class DashboardController extends Controller
                     ->where('sessionadmin', $sessionAdmin)
                     ->first();
 
-                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
-
-                $results = Result2023::with('course')
-                    ->with(['faculty', 'department'])
-                    ->select('*')
-                    ->where('matric', $matric)
-                    ->where('yr_of_entry', $normalizedSecAdmin)
-                    ->get()
-                    ->makeHidden(['status']);
-
-                if ($results->isEmpty()) {
-                    $biodata = TransDetailsNew::with([
-                        'transInvoice' => function ($query) {
-                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                        },
-                        'transDetailsFiles:id,trans_details_id,file_path',
-                    ])
-                        ->where('matric', $matric)
-                        ->where('sessionadmin', $sessionAdmin)
-                        ->first();
-
-                    $results = Result2018::with('course')
-                        ->where('stud_id', $matric)
-                        ->where('sec', $sessionAdmin)
-                        ->get();
-
-                    if ($results->isEmpty()) {
-                        // If Result2018 is empty, fallback to ResultOld
-                        $biodata = TransDetailsNew::where('matric', $matric)
-                            ->where('sessionadmin', $sessionAdmin)
-                            ->where('email', $invoiceNo)
-                            ->first();
-
-                        $results = ResultOld::with([
-                            'transInvoice' => function ($query) {
-                                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                            },
-                            'transDetailsFiles:id,trans_details_id,file_path',
-                        ])->where('matno', $matric)
-                            ->where('sec', $sessionAdmin)
-                            ->with('course')
-                            ->get();
-
-                    }
-
-                }
-
-            } elseif ($startYear >= 2018 && $startYear <= 2022) {
-                // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
-                $biodata = StudentRecord::where('matric', $matric)->first();
-                if (! $biodata) {
-                    Log::error('No StudentRecord found for matric: ' . $matric);
-                }
-                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
-
-                $biodata = TransDetailsNew::with([
-                    'transInvoice' => function ($query) {
-                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                    },
-                    'transDetailsFiles:id,trans_details_id,file_path',
-                ])
-                    ->where('matric', $matric)
-                    ->where('sessionadmin', $sessionAdmin)
-                    ->first();
-
-                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
-
-                $results = Result2023::with('course')
-                    ->with(['faculty', 'department'])
-                    ->select('*')
-                    ->where('matric', $matric)
-                    ->where('yr_of_entry', $normalizedSecAdmin)
-                    ->get()
-                    ->makeHidden(['status']);
-
-                if ($results->isEmpty()) {
-                    $biodata = TransDetailsNew::with([
-                        'transInvoice' => function ($query) {
-                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                        },
-                        'transDetailsFiles:id,trans_details_id,file_path',
-                    ])
-                        ->where('matric', $matric)
-                        ->where('sessionadmin', $sessionAdmin)
-                        ->first();
-
-                    $results = Result2018::with('course')
-                        ->where('stud_id', $matric)
-                        ->where('sec', $sessionAdmin)
-                        ->get();
-
-                    if ($results->isEmpty()) {
-                        // If Result2018 is empty, fallback to ResultOld
-                        $biodata = TransDetailsNew::where('matric', $matric)
-                            ->where('sessionadmin', $sessionAdmin)
-                            ->where('email', $invoiceNo)
-                            ->first();
-
-                        $results = ResultOld::with([
-                            'transInvoice' => function ($query) {
-                                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                            },
-                            'transDetailsFiles:id,trans_details_id,file_path',
-                        ])->where('matno', $matric)
-                            ->where('sec', $sessionAdmin)
-                            ->with('course')
-                            ->get();
-
-                    }
-
-                }
-
-            } elseif ($startYear >= 2013 && $startYear <= 2017) {
-                // **2023/2024 and above: Check Result2023 first, fallback to Result2018**
-                $biodata = StudentRecord::where('matric', $matric)->first();
-                if (! $biodata) {
-                    Log::error('No StudentRecord found for matric: ' . $matric);
-                }
-                $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
-
-                $biodata = TransDetailsNew::with([
-                    'transInvoice' => function ($query) {
-                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                    },
-                    'transDetailsFiles:id,trans_details_id,file_path',
-                ])
-                    ->where('matric', $matric)
-                    ->where('sessionadmin', $sessionAdmin)
-                    ->first();
-
-                $gender = $biodata->sex ?? $transDetails->sex ?? 'N/A';
-
-                $results = Result2023::with('course')
-                    ->with(['faculty', 'department'])
-                    ->select('*')
-                    ->where('matric', $matric)
-                    ->where('yr_of_entry', $normalizedSecAdmin)
-                    ->get()
-                    ->makeHidden(['status']);
-
-                if ($results->isEmpty()) {
-                    $biodata = TransDetailsNew::with([
-                        'transInvoice' => function ($query) {
-                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                        },
-                        'transDetailsFiles:id,trans_details_id,file_path',
-                    ])
-                        ->where('matric', $matric)
-                        ->where('sessionadmin', $sessionAdmin)
-                        ->first();
-
-                    $results = Result2018::with('course')
-                        ->where('stud_id', $matric)
-                        ->where('sec', $sessionAdmin)
-                        ->get();
-
-                    if ($results->isEmpty()) {
-                        // If Result2018 is empty, fallback to ResultOld
-                        $biodata = TransDetailsNew::where('matric', $matric)
-                            ->where('sessionadmin', $sessionAdmin)
-                            ->where('email', $invoiceNo)
-                            ->first();
-
-                        $results = ResultOld::with([
-                            'transInvoice' => function ($query) {
-                                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                            },
-                            'transDetailsFiles:id,trans_details_id,file_path',
-                        ])->where('matno', $matric)
-                            ->where('sec', $sessionAdmin)
-                            ->with('course')
-                            ->get();
-
-                    }
-
-                }
-
-            } else {
-                // **Older than 2013: Use ResultOld**
-                $biodata = TransDetailsNew::with([
-                    'transInvoice' => function ($query) {
-                        $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
-                    },
-                    'transDetailsFiles:id,trans_details_id,file_path',
-                ])
-                    ->where('matric', $matric)
-                    ->where('sessionadmin', $sessionAdmin)
-                    ->first();
-
-                $results = ResultOld::where('matno', $matric)
+                $results = Result2018::with('course')
+                    ->where('stud_id', $matric)
                     ->where('sec', $sessionAdmin)
-                    ->with('course')
                     ->get();
+
+                if ($results->isEmpty()) {
+                    // If Result2018 is empty, fallback to ResultOld
+                    $biodata = TransDetailsNew::where('matric', $matric)
+                        ->where('sessionadmin', $sessionAdmin)
+                        ->first();
+
+                    $results = ResultOld::with([
+                        'transInvoice' => function ($query) {
+                            $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque');
+                        },
+                        'transDetailsFiles:id,trans_details_id,file_path',
+                    ])->where('matno', $matric)
+                        ->where('sec', $sessionAdmin)
+                        ->with('course')
+                        ->get();
+                }
             }
+
+
 
             // Prepare data for PDF generation
             $data = compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender');
@@ -1675,5 +1341,181 @@ class DashboardController extends Controller
             Log::info('Invalid session format for email sending');
             throw new \Exception('Invalid session format');
         }
+    }
+
+
+
+
+
+
+
+
+
+    /**
+     * Calculate CGPA and other academic metrics based on the PHP logic
+     */
+    private function calculateAcademicMetrics($results, $program = 'Academics')
+    {
+        $totalUnits = 0;
+        $totalGradePoints = 0;
+        $unitsPassedCore = 0;
+        $unitsPassedRequired = 0;
+        $totalUnitsPassed = 0;
+        $coreUnitsToPass = 0;
+        $requiredUnitsToPass = 0;
+
+        foreach ($results as $result) {
+            $score = $result->score;
+            $courseUnit = $result->cunit;
+            $courseStatus = $result->cstatus;
+
+            // Add to total units
+            $totalUnits += $courseUnit;
+
+            // Calculate points based on score (0-7 scale)
+            $point = $this->getGradePoint($score);
+
+            // Calculate grade points (point × unit)
+            $gradePoints = $point * $courseUnit;
+            $totalGradePoints += $gradePoints;
+
+            // Track units based on status
+            if ($courseStatus === 'C') {
+                $coreUnitsToPass += $courseUnit;
+                if ($score >= 40) {
+                    $unitsPassedCore += $courseUnit;
+                }
+            }
+
+            if ($courseStatus === 'R') {
+                $requiredUnitsToPass += $courseUnit;
+                if ($score >= 30) {
+                    $unitsPassedRequired += $courseUnit;
+                }
+            }
+
+            // Calculate total units passed (TUP) - based on the original logic
+            if (($courseStatus === 'C' && $score > 39) ||
+                ($score > 29 && ($courseStatus === 'R' || $courseStatus === 'E' || $courseStatus === 'EE'))
+            ) {
+                $totalUnitsPassed += $courseUnit;
+            }
+        }
+
+        // Calculate raw CGPA
+        $rawCgpa = ($totalUnits > 0) ? round($totalGradePoints / $totalUnits, 2) : 0;
+
+        // Determine if student meets pass conditions
+        $meetsPassConditions = $this->checkPassConditions(
+            $program,
+            $totalUnitsPassed,
+            $unitsPassedCore,
+            $coreUnitsToPass,
+            $unitsPassedRequired,
+            $requiredUnitsToPass
+        );
+
+        // Determine result, remark and CGPA display based on conditions
+        $resultData = $this->determineResult($program, $meetsPassConditions, $rawCgpa);
+
+        $cgpa = $resultData['cgpa'];
+        $result = $resultData['result'];
+        $remark = $resultData['remark'];
+
+        return [
+            'cgpa' => $cgpa,
+            'rawCgpa' => $rawCgpa, // Store raw CGPA for reference
+            'result' => $result,
+            'remark' => $remark,
+            'meetsPassConditions' => $meetsPassConditions,
+            'totalUnits' => $totalUnits,
+            'totalGradePoints' => $totalGradePoints,
+            'unitsPassedCore' => $unitsPassedCore,
+            'unitsPassedRequired' => $unitsPassedRequired,
+            'totalUnitsPassed' => $totalUnitsPassed,
+            'coreUnitsToPass' => $coreUnitsToPass,
+            'requiredUnitsToPass' => $requiredUnitsToPass,
+            'passStatus' => $meetsPassConditions ? 'PASS' : 'FAIL'
+        ];
+    }
+
+    /**
+     * Check if student meets the pass conditions based on program type
+     */
+    private function checkPassConditions($program, $totalUnitsPassed, $unitsPassedCore, $coreUnitsToPass, $unitsPassedRequired, $requiredUnitsToPass)
+    {
+        $coreRequirementMet = $unitsPassedCore >= $coreUnitsToPass;
+        $requiredRequirementMet = $unitsPassedRequired >= $requiredUnitsToPass;
+
+        switch ($program) {
+            case 'Academics':
+                return ($totalUnitsPassed > 29) && $coreRequirementMet && $requiredRequirementMet;
+
+            case 'Professional':
+                return ($totalUnitsPassed > 44) && $coreRequirementMet && $requiredRequirementMet;
+
+            case 'PGD':
+                return ($totalUnitsPassed > 19) && $coreRequirementMet && $requiredRequirementMet;
+
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Determine result, remark and CGPA based on program and conditions
+     */
+    private function determineResult($program, $meetsPassConditions, $rawCgpa)
+    {
+        if ($meetsPassConditions) {
+            // Student meets pass conditions
+            if ($program == 'Academics') {
+                if ($rawCgpa < 9.0 && $rawCgpa >= 5.0) {
+                    return ['cgpa' => $rawCgpa, 'result' => 'PASS', 'remark' => 'Ph.D'];
+                } elseif ($rawCgpa < 5.0 && $rawCgpa >= 4.0) {
+                    return ['cgpa' => $rawCgpa, 'result' => 'PASS', 'remark' => 'M.Phil/Ph.D'];
+                } elseif ($rawCgpa < 4.0 && $rawCgpa >= 3.0) {
+                    return ['cgpa' => $rawCgpa, 'result' => 'PASS', 'remark' => 'M.Phil'];
+                } elseif ($rawCgpa < 3.0 && $rawCgpa >= 1.0) {
+                    return ['cgpa' => $rawCgpa, 'result' => 'PASS', 'remark' => 'TM'];
+                }
+            } elseif ($program == 'Professional') {
+                return ['cgpa' => $rawCgpa, 'result' => 'PASS', 'remark' => 'PASS'];
+            } elseif ($program == 'PGD') {
+                return ['cgpa' => $rawCgpa, 'result' => 'PASS', 'remark' => 'PASS'];
+            }
+        } else {
+            // Student doesn't meet pass conditions
+            return ['cgpa' => '-', 'result' => '-', 'remark' => 'NG'];
+        }
+
+        // Fallback
+        return ['cgpa' => '-', 'result' => '-', 'remark' => 'NG'];
+    }
+
+    /**
+     * Get grade point based on score (following the original PHP logic)
+     */
+    private function getGradePoint($score)
+    {
+        if ($score <= 39) {
+            return 0;
+        } elseif ($score >= 40 && $score < 45) {
+            return 1;
+        } elseif ($score >= 45 && $score < 50) {
+            return 2;
+        } elseif ($score >= 50 && $score < 55) {
+            return 3;
+        } elseif ($score >= 55 && $score < 60) {
+            return 4;
+        } elseif ($score >= 60 && $score < 65) {
+            return 5;
+        } elseif ($score >= 65 && $score < 70) {
+            return 6;
+        } elseif ($score >= 70 && $score <= 100) {
+            return 7;
+        }
+
+        return 0; // fallback
     }
 }

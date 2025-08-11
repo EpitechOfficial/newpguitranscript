@@ -110,6 +110,7 @@
                 <div class="menu-container flex-grow-1">
                     @php
                         $role = (session('admin_user')->role) ?? null;
+                        $mass = false; // Assuming mass transcript is available for all roles
                     @endphp
 
                     <ul id="menu" class="menu">
@@ -191,6 +192,17 @@
                             <a href="{{ route('admin.edit_transcript_realtime') }}" data-href="#">
                                 <i data-acorn-icon="edit" class="icon" data-acorn-size="18"></i>
                                 <span class="label">Edit Result</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if ($mass)
+                        
+                        <!-- Students by Department - Available to all roles -->
+                        <li>
+                            <a href="{{ route('admin.students_by_department') }}" data-href="#">
+                                <i data-acorn-icon="user" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Mass Transcript</span>
                             </a>
                         </li>
                         @endif

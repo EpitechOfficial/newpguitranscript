@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="author" content="Laralink">
     <!-- Site Title -->
-    <title>Transcript Application | Invoices</title>
+    <title>Transcript Application | Student Transcript</title>
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
     <style>
         body,

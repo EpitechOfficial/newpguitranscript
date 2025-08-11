@@ -171,7 +171,6 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($records as $index => $record)
-
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ $record->matric }}</td>
@@ -195,7 +194,9 @@
                                                         data-copies="{{ $record->transInvoice->mth }}">
                                                         View
                                                     </button> --}}
-                                                    <a class="btn btn-primary btn-sm" href="{{ route('admin.transcript.details', ['id' => $record->email]) }}" target="_blank">View</a>
+                                                    <a class="btn btn-primary btn-sm"
+                                                        href="{{ route('admin.transcript.details', ['id' => $record->email]) }}"
+                                                        target="_blank">View</a>
                                                     {{-- <button class="btn btn-primary btn-sm" onclick="{{ route('admin.transcript.details', ['id' => $record->id]) }}">
                                                         View
                                                     </button> --}}
@@ -206,18 +207,17 @@
                                                         View NOR
                                                     </button> --}}
 
-                                                    <button class="btn btn-warning btn-sm"
-        data-bs-toggle="modal"
-        data-bs-target="#viewDocumentModal"
-        data-award="{{ $record->file->file_path ?? '' }}">
-    View NOR
-</button>
- <button class="btn btn-danger btn-sm"
-                                                            data-matric="{{ $record->matric }}"
-                                                            data-sessionadmin="{{ $record->sessionadmin }}"
-                                                            onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->email }}')">
-                                                            Reject
-                                                        </button>
+                                                    <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                        data-bs-target="#viewDocumentModal"
+                                                        data-award="{{ $record->file->file_path ?? '' }}">
+                                                        View NOR
+                                                    </button>
+                                                    <button class="btn btn-danger btn-sm"
+                                                        data-matric="{{ $record->matric }}"
+                                                        data-sessionadmin="{{ $record->sessionadmin }}"
+                                                        onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->email }}')">
+                                                        Reject
+                                                    </button>
 
                                                     <button class="btn btn-success btn-sm w-auto text-nowrap"
                                                         data-matric="{{ $record->matric }}"
@@ -336,7 +336,8 @@
 
                             if (awardLink) {
                                 // Create the full URL using asset helper from Laravel
-                                const fileUrl = `{{ config('app.url') }}/storage/${awardLink}`; // Directly access the public storage path
+                                const fileUrl =
+                                `{{ config('app.url') }}/storage/${awardLink}`; // Directly access the public storage path
 
                                 console.log("Generated file URL:", fileUrl); // Log the file URL for debugging
 
@@ -363,8 +364,8 @@
                         });
                     });
 
-                    function processRecord(button, matric, sessionadmin, sessiongrad,invoiceNo) {
-                        console.log("Processing record for:", matric, sessionadmin,sessiongrad); // Debugging log
+                    function processRecord(button, matric, sessionadmin, sessiongrad, invoiceNo) {
+                        console.log("Processing record for:", matric, sessionadmin, sessiongrad); // Debugging log
 
                         button.disabled = true;
                         button.innerHTML =
@@ -419,7 +420,7 @@
                     }
 
 
-                     function rejectRecord(button, matric, sessionadmin) {
+                    function rejectRecord(button, matric, sessionadmin) {
                         console.log("Processing record for:", matric, sessionadmin); // Debugging log
 
                         button.disabled = true;

@@ -35,6 +35,12 @@ class Result2023 extends Model
     {
         return $this->belongsTo(DeptNew::class, 'dept');
     }
+
+    public function studentRecord()
+    {
+        return $this->belongsTo(StudentRecord::class, 'matric', 'matric');
+    }
+
     public function specialization()
     {
         return $this->belongsTo(FieldNew::class, 'field');

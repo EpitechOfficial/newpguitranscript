@@ -7,8 +7,10 @@ use App\Http\Controllers\TransInvoiceController;
 use App\Http\Controllers\GetRecordController;
 use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\ICTHeadController;
 use App\Http\Controllers\ResultOldController;
 use App\Http\Controllers\AuthenticateController;
+use App\Http\Controllers\StudentsByDepartmentController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,7 +24,6 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
 // Public Routes
 Route::get('/', [LoginController::class, 'index'])->name('std.login');
 Route::post('/', [LoginController::class, 'store'])->name('std.login.store');
@@ -41,7 +42,7 @@ Route::prefix('admin')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/create', [DashboardController::class, 'create'])->name('dashboard.create');
-        Route::get('/track-application', [DashboardController::class, 'trackApplication'])->name('track');
+    Route::get('/track-application', [DashboardController::class, 'trackApplication'])->name('track');
 
     Route::post('/dashboard/create', [DashboardController::class, 'store'])->name('dashboard.create');
     Route::get('/dashboard/getDepartments', [DashboardController::class, 'getDepartments'])->name('dashboard.getDepartments');
@@ -55,7 +56,7 @@ Route::middleware(['auth'])->group(function () {
     // Cart and Transinvoice Resources
     Route::resource('cart', CartController::class);
     Route::resource('transinvoice', TransInvoiceController::class);
-Route::get('/transreceipt/{id}', [TransInvoiceController::class, 'showReceipt'])->name('transinvoice.showReceipt');
+    Route::get('/transreceipt/{id}', [TransInvoiceController::class, 'showReceipt'])->name('transinvoice.showReceipt');
 
     // Dynamic Record Fetching
     Route::get('/get-departments/{facultyId}', [GetRecordController::class, 'getDepartments']);
@@ -83,19 +84,62 @@ Route::post('/admin/update-cheque', [DashboardController::class, 'updateCheque']
 Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(function () {
     // Main dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-    
-    // Role-specific dashboards
-    Route::get('/dashboard-to', [AdminDashboardController::class, 'toDashboard'])->name('dashboard.to');
-    Route::get('/dashboard-ki', [AdminDashboardController::class, 'kiDashboard'])->name('dashboard.ki');
-    Route::get('/dashboard-po', [AdminDashboardController::class, 'poDashboard'])->name('dashboard.po');
-    Route::get('/dashboard-fo', [AdminDashboardController::class, 'foDashboard'])->name('dashboard.fo');
-    Route::get('/transreceive-dashboard', [AdminDashboardController::class, 'transreceiveDashboard'])->name('transrecevedashboard');
-    Route::get('/record-processed', [AdminDashboardController::class, 'recordProcessed'])->name('recordProcesseds');
-    
+
+    // TO role (2)
+    Route::get('/dashboard-to', [AdminDashboardController::class, 'toDashboard'])
+        ->name('dashboard.to')
+        ->middleware('role:2');
+
+    // KI role (3)
+    Route::get('/dashboard-ki', [AdminDashboardController::class, 'kiDashboard'])
+        ->name('dashboard.ki')
+        ->middleware('role:3');
+
+    // PO role (4)
+    Route::get('/dashboard-po', [AdminDashboardController::class, 'poDashboard'])
+        ->name('dashboard.po')
+        ->middleware('role:4');
+
+    // FO role (5)
+    Route::get('/dashboard-fo', [AdminDashboardController::class, 'foDashboard'])
+        ->name('dashboard.fo')
+        ->middleware('role:5');
+
+    // Transreceive role (6)
+    Route::get('/transreceive-dashboard', [AdminDashboardController::class, 'transreceiveDashboard'])
+        ->name('transrecevedashboard')
+        ->middleware('role:6');
+
+    // Record Processed role (7)
+    Route::get('/record-processed', [AdminDashboardController::class, 'recordProcessed'])
+        ->name('recordProcesseds')
+        ->middleware('role:7');
+
     // Legacy routes for backward compatibility
     Route::get('/transrecieveDashboard', [DashboardController::class, 'transrecieveDashboard'])->name('transrecieveDashboard');
     Route::get('/approved-record', [DashboardController::class, 'recordApproved'])->name('recordApproved');
     Route::post('/logout', [AdminLoginController::class, 'destroy'])->name('logout');
+    $mass = false; // Assuming mass transcript is available for all roles
+    if ($mass) {
+        # code...
+        // Students by Department Routes
+        Route::get('/students-by-department', [StudentsByDepartmentController::class, 'index'])->name('students_by_department');
+        Route::get('/students-by-department/fetch-departments', [StudentsByDepartmentController::class, 'fetchDepartments'])
+            ->name('students_by_department.fetch_departments');
+        Route::get('/students-by-department/fetch-students', [StudentsByDepartmentController::class, 'fetchStudents'])
+            ->name('students_by_department.fetch_students');
+        Route::post('/students-by-department/view-transcript', [StudentsByDepartmentController::class, 'viewTranscript'])
+            ->name('students_by_department.view_transcript');
+    }
+
+    // Students by Department Routes
+    Route::get('/students-by-department', function () {
+        return view('admin.students_by_department');
+    })->name('students_by_department');
+    Route::get('/students-by-department/fetch-departments', [StudentsByDepartmentController::class, 'fetchDepartments'])
+        ->name('students_by_department.fetch_departments');
+    Route::get('/students-by-department/fetch-students', [StudentsByDepartmentController::class, 'fetchStudents'])
+        ->name('students_by_department.fetch_students');
     Route::post('/process-record', [DashboardController::class, 'processRecord'])->name('processRecord');
     Route::post('/process-transcript', [DashboardController::class, 'processTranscript'])->name('processTranscript');
     Route::post('/view-transcript', [DashboardController::class, 'processView'])->name('processView');
@@ -125,6 +169,14 @@ Route::post('/admin-users', [AdminUserController::class, 'store'])->name('adminu
 Route::post('/admin-users/toggle/{id}', [AdminUserController::class, 'toggleStatus'])->name('adminusers.toggle');
 Route::get('/admin-users/{id}', [AdminUserController::class, 'show'])->name('adminusers.show');
 
+// ICT Head Routes
+Route::middleware(['auth:admin'])->prefix('admin/icthead')->name('admin.icthead.')->group(function () {
+    Route::get('/', [ICTHeadController::class, 'index'])->name('dashboard');
+    Route::get('/stats', [ICTHeadController::class, 'getStats'])->name('stats');
+    Route::resource('users', ICTHeadController::class)->except(['create', 'edit']);
+    Route::post('/users/{id}/toggle', [ICTHeadController::class, 'toggleStatus'])->name('users.toggle');
+});
+
 
 //Route::view('/register', 'register')->name('register');
 
@@ -151,7 +203,7 @@ Route::post('/result-old/upload', [ResultOldController::class, 'uploadExcel'])->
 // Route::post('admin/logout', [AdminLoginController::class, 'destroy'])->name('logout');
 
 // Optional dashboard routes (if you want them accessible via URL)
- Route::get('admin/dashboard', [AdminLoginController::class, 'dashboard'])->name('admin.dashboard');
+Route::get('admin/dashboard', [AdminLoginController::class, 'dashboard'])->name('admin.dashboard');
 // Route::get('admin/dashboard-to', [AdminLoginController::class, 'dashboardTo'])->name('dashboard.to');
 // Route::get('admin/dashboard-ki', [AdminLoginController::class, 'dashboardKi'])->name('dashboard.ki');
 // Route::get('admin/dashboard-po', [AdminLoginController::class, 'dashboardPo'])->name('dashboard.po');

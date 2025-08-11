@@ -212,12 +212,12 @@
                         </table>
                         <hr>
                         <p class="text-center bold"><strong>Cumulative Grade Point Average (CGPA / WA) Score for the Degree
-                                of Master is</strong> <input type="number" name="cgpa" value=""
+                                of Master is</strong> <input type="number" name="cgpa" value="{{$cgpa ?? 'N/A'}}"
                                 class="border  p-1 px-2 w-full rounded-md"></p>
                         <div class="test">
                             <div>
                                 <label class="font-semibold block">Degree Awarded:</label>
-                                <input type="text" name="degreeAward" value=""
+                                <input type="text" name="degreeAward" value="{{ $degreeAwarded ?? 'Not Specified' }}"
                                     class="border  p-1 px-2 w-full rounded-md">
                             </div>
                             <div>

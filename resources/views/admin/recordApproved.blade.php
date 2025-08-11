@@ -225,7 +225,7 @@
                                             @endforeach
                                         @endif
                                     @endforeach
-                                    
+
                                 </tbody>
                             </table>
 
@@ -305,6 +305,8 @@
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = url;
+            form.target = '_blank';
+
 
             // Add CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
