@@ -14,6 +14,8 @@
         body,
         html {
             background: #fff !important;
+            font-family: serif !important;
+            font-size: 1rem !important;
         }
 
         th {
@@ -60,7 +62,7 @@
         }
 
         .afterHead2 {
-            padding-top: 20rem !important;
+            padding-top: 12rem !important;
         }
 
         .info-container {
@@ -148,12 +150,12 @@
 
         .watermark {
             position: fixed;
-            top: 40%;
+            top: 60%;
             left: 50%;
             transform: translate(-50%, -50%) rotate(-30deg);
-            font-size: 4rem;
+            font-size: 5rem;
             color: #0a2b4f;
-            opacity: 0.08;
+            opacity: 0.4;
             white-space: nowrap;
             pointer-events: none;
             z-index: 9999;
@@ -216,147 +218,155 @@
                         use Illuminate\Support\Str;
                     @endphp
 
-                            <div class="afterHead afterHead2">
-                 
-                    <p class="bb text-center"><strong>PERMANENT POSTGRADUATE STUDENT'S ACADEMIC RECORD AND
-                            TRANSCRIPT</strong> </p>
 
 
 
-                    <div class="info-container">
-                        <strong>Name (Surname Last):</strong>
-                        <span>{{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}</span>
+                    <div class="afterHead afterHead2">
 
-                        <strong>Gender:</strong>
-                        <span> {{ $gender }}</span>
 
-                        <strong>Matriculation Number:</strong>
-                        <span>{{ $biodata->matric }}</span>
 
-                        <strong>Session Admitted:</strong>
-                        <span>{{ $biodata->sessionadmin ?? $results->first()->yr_of_entry }}</span>
+                        <p class="bb text-center"><strong>PERMANENT POSTGRADUATE STUDENT'S ACADEMIC RECORD AND
+                                TRANSCRIPT</strong> </p>
 
-                        <strong>Department:</strong>
-                        <span>{{ $biodata->department ?? ($results->first()->department->department ?? 'N/A') }}</span>
 
-                        <strong>Faculty:</strong>
-                        <span>{{ $biodata->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}</span>
+
+                        <div class="info-container">
+                            <strong>Name (Surname Last):</strong>
+                            <span>{{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}</span>
+
+                            <strong>Gender:</strong>
+                            <span> {{ $gender }}</span>
+
+                            <strong>Matriculation Number:</strong>
+                            <span>{{ $biodata->matric }}</span>
+
+                            <strong>Session Admitted:</strong>
+                            <span>{{ $biodata->sessionadmin ?? $results->first()->yr_of_entry }}</span>
+
+                            <strong>Department:</strong>
+                            <span>{{ $biodata->department ?? ($results->first()->department->department ?? 'N/A') }}</span>
+
+                            <strong>Faculty:</strong>
+                            <span>{{ $biodata->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}</span>
+                        </div>
+
+
+
                     </div>
 
-
-
-                </div>
-
-                <hr>
-                <div class="tm_table tm_style1">
-                    <div class="overflow-x-auto">
-                        <table class="w-full ">
-                            <thead>
-                                <tr class="">
-                                    <th class="">Course Code</th>
-                                    <th class="">Course Title</th>
-                                    <th class="">Units</th>
-                                    <th class="">Status</th>
-                                    <th class="">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($results as $result)
-                                    <tr>
-                                        <td class="text-center">
-                                            {{ optional($result->course)->course_code ?? (optional($result->course)->course ?? 'N/A') }}
-                                        </td>
-                                        <td class="">
-                                            {{ $result->course->title ?? ($result->course->course_title ?? 'N/A') }}
-                                        </td>
-                                        <td class="text-center">
-                                            {{ $result->course->unit ?? ($result->cunit ?? 'N/A') }}
-                                        </td>
-
-                                        <td class="text-center">
-                                            {{ $result->status ?? ($result->cstatus ?? 'N/A') }}
-                                        </td>
-                                        <td class="text-center">{{ $result->score }}</td>
+                    <hr>
+                    <div class="tm_table tm_style1">
+                        <div class="overflow-x-auto">
+                            <div class="watermark">
+                                STUDENT'S COPY
+                            </div>
+                            <table class="w-full ">
+                                <thead>
+                                    <tr class="">
+                                        <th class="">Course Code</th>
+                                        <th class="">Course Title</th>
+                                        <th class="">Units</th>
+                                        <th class="">Status</th>
+                                        <th class="">Score</th>
                                     </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <hr>
-                        <p class="text-center bold"><strong>
-                                {{ $cgpa <= 7 ? 'Cumulative Grade Point Average (CGPA)' : 'Waited Average (WA)' }}
-                                Score for the
-                                Degree
-                                of Master is </strong> {{ $cgpa ?? 'N/A' }}</p>
-                        <div class="test">
+                                </thead>
+                                <tbody>
+                                    @foreach ($results as $result)
+                                        <tr>
+                                            <td class="text-center">
+                                                {{ optional($result->course)->course_code ?? (optional($result->course)->course ?? 'N/A') }}
+                                            </td>
+                                            <td class="">
+                                                {{ $result->course->title ?? ($result->course->course_title ?? 'N/A') }}
+                                            </td>
+                                            <td class="text-center">
+                                                {{ $result->course->unit ?? ($result->cunit ?? 'N/A') }}
+                                            </td>
 
-                            <div>
-                                <p class="text-center bold"><strong>Degree Awarded:
-                                    </strong>{{ $degreeAwarded ?? 'N/A' }}</strong> </p>
+                                            <td class="text-center">
+                                                {{ $result->status ?? ($result->cstatus ?? 'N/A') }}
+                                            </td>
+                                            <td class="text-center">{{ $result->score }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                            <hr>
+                            <p class="text-center bold"><strong>
+                                    {{ $cgpa <= 7 ? 'Cumulative Grade Point Average (CGPA)' : 'Waited Average (WA)' }}
+                                    Score for the
+                                    Degree
+                                    of Master is </strong> {{ $cgpa ?? 'N/A' }}</p>
+                            <div class="test">
+
+                                <div>
+                                    <p class="text-center bold"><strong>Degree Awarded:
+                                        </strong>{{ $degreeAwarded ?? 'N/A' }}</strong> </p>
+                                </div>
+                                <div>
+                                    <p class="text-center bold"><strong>Date of Award:
+                                        </strong>{{ $dateAward ?? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') }}</strong>
+                                    </p>
+                                </div>
+
+
+
                             </div>
-                            <div>
-                                <p class="text-center bold"><strong>Date of Award:
-                                    </strong>{{ $dateAward ?? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') }}</strong>
-                                </p>
+                            <p><strong>Area of Specialization:</strong>
+                                {{ $biodata->feildofinterest ?? ($results->first()->specialization->field_title ?? 'N/A') }}
+                            </p>
+
+                            <hr>
+
+                            <div class="test mt">
+
+                                <div class="sign">
+                                    <img src="{{ asset('assets/img/ProvostSign.png') }}" alt="Not Approved"
+                                        srcset="">
+                                    <hr>
+                                    <p>
+
+                                        PROVOST, POSTGRADUATE COLLEGE
+                                    </p>
+                                </div>
+                                <div class="sign">
+                                    <img src="{{ asset('assets/img/DR-Transcript.png') }}" alt="Not Approved"
+                                        srcset="">
+                                    <hr>
+                                    <p>DEPUTY REGISTRAR <br>EXAMS AND RECORDS, <br>POSTGRADUATE COLLEGE</p>
+                                </div>
+
+
+
                             </div>
-
-
 
                         </div>
-                        <p><strong>Area of Specialization:</strong>
-                            {{ $biodata->feildofinterest ?? ($results->first()->specialization->field_title ?? 'N/A') }}
-                        </p>
-
-                        <hr>
-
-                        <div class="test mt">
-
-                            <div class="sign">
-                                <img src="{{ asset('assets/img/ProvostSign.png') }}"
-                                    alt="Not Approved" srcset="">
-                                <hr>
-                                <p>
-
-                                    PROVOST, POSTGRADUATE COLLEGE
-                                </p>
-                            </div>
-                            <div class="sign">
-                                <img src="{{ asset('assets/img/DR-Transcript.png') }}"
-                                    alt="Not Approved" srcset="">
-                                <hr>
-                                <p>DEPUTY REGISTRAR <br>EXAMS AND RECORDS, <br>POSTGRADUATE COLLEGE</p>
-                            </div>
-
-
-
-                        </div>
-
                     </div>
+
+
+
                 </div>
 
-
-               
             </div>
+        </div>
+        <div class="tm_invoice_btns tm_hide_print">
+            <a href="javascript:window.print()" class="tm_invoice_btn tm_color1">
+                <span class="tm_btn_icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512">
+                        <path
+                            d="M384 368h24a40.12 40.12 0 0040-40V168a40.12 40.12 0 00-40-40H104a40.12 40.12 0 00-40 40v160a40.12 40.12 0 0040 40h24"
+                            fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32" />
+                        <rect x="128" y="240" width="256" height="208" rx="24.32" ry="24.32" fill="none"
+                            stroke="currentColor" stroke-linejoin="round" stroke-width="32" />
+                        <path d="M384 128v-24a40.12 40.12 0 00-40-40H168a40.12 40.12 0 00-40 40v24" fill="none"
+                            stroke="currentColor" stroke-linejoin="round" stroke-width="32" />
+                        <circle cx="392" cy="184" r="24" fill='currentColor' />
+                    </svg>
+                </span>
+                <span class="tm_btn_text">Print</span>
+            </a>
 
         </div>
-    </div>
-    <div class="tm_invoice_btns tm_hide_print">
-        <a href="javascript:window.print()" class="tm_invoice_btn tm_color1">
-            <span class="tm_btn_icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512">
-                    <path
-                        d="M384 368h24a40.12 40.12 0 0040-40V168a40.12 40.12 0 00-40-40H104a40.12 40.12 0 00-40 40v160a40.12 40.12 0 0040 40h24"
-                        fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32" />
-                    <rect x="128" y="240" width="256" height="208" rx="24.32" ry="24.32"
-                        fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32" />
-                    <path d="M384 128v-24a40.12 40.12 0 00-40-40H168a40.12 40.12 0 00-40 40v24" fill="none"
-                        stroke="currentColor" stroke-linejoin="round" stroke-width="32" />
-                    <circle cx="392" cy="184" r="24" fill='currentColor' />
-                </svg>
-            </span>
-            <span class="tm_btn_text">Print</span>
-        </a>
-
-    </div>
     </div>
     </div>
     <script src="{{ asset('assets/js/jquery.min.js') }}"></script>

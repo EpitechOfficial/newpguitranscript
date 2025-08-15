@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
@@ -473,10 +472,10 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-                'transInvoice' => function ($query) {
-                    $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
-                },
-            ])
+            'transInvoice' => function ($query) {
+                $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
+            },
+        ])
             ->get();
 
         return view('admin.dashboard', ['records' => $records]); // Adjust the view path as necessary
@@ -490,10 +489,10 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-                'transInvoice' => function ($query) {
-                    $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); // Select only necessary fields
-                },
-            ])
+            'transInvoice' => function ($query) {
+                $query->select('invoiceno', 'purpose', 'dy', 'mth', 'cheque'); // Select only necessary fields
+            },
+        ])
             ->get();
 
         return view('admin.transrecevedashboard', ['records' => $records]); // Adjust the view path as necessary
@@ -632,14 +631,14 @@ class DashboardController extends Controller
                 ->where('specialization', $results->first()->field ?? null)
                 ->first();
             $degreeAwarded = $rendition->naration ?? 'Not Specified';
-            
+
             $programCgpa = DB::table('programme_cgpa')
                 ->where('degree_id', $results->first()->degree ?? null)
                 ->first();
             $program = $programCgpa->type ?? 'Not Specified';
 
             $academicData = $this->calculateAcademicMetrics($results, $program);
-            $cgpa = $academicData['cgpa'] ?? 'N/A';
+            $cgpa         = $academicData['cgpa'] ?? 'N/A';
             Log::info('academicData: ' . json_encode($academicData));
 
             Log::info('results: ' . $results);
@@ -647,9 +646,9 @@ class DashboardController extends Controller
             if ($results->isEmpty()) {
                 // If Result2023 is empty, fallback to Result2018
                 //$biodata = Biodata::where('matric', $matric)->first();
-                 $degreeAwarded = 'Not Specified';
-                 $cgpa = 'N/A';
-                $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
+                $degreeAwarded = 'Not Specified';
+                $cgpa          = 'N/A';
+                $biodata       = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
 
                 // Try fetching from Result2018 first
                 $results = Result2018::with('course')
@@ -657,7 +656,11 @@ class DashboardController extends Controller
                     ->where('sec', $sessionAdmin)
                     ->get();
 
-                if ($results->isEmpty()) {
+                $inComplete = $results->isEmpty() || $results->contains(function ($result) {
+                    return ! $result->course;
+                });
+
+                if ($inComplete) {
                     // If Result2018 is empty, fallback to ResultOld
                     $records = TransDetailsNew::where('matric', $matric)
                         ->where('sessionadmin', $sessionAdmin)
@@ -669,10 +672,33 @@ class DashboardController extends Controller
                         ->with('course')
                         ->get();
 
+                    $biodata = $records;
+                    Log::info('Raw degree value: "' . $biodata->degree . '"');
+
+// Then use the correct comparison
+                    if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
+                        Log::info('Rendering higher degree transcript view');
+                        return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender'));
+                    }
+
+                    Log::info('Rendering old transcript view');
                     return view('admin.transcript_old', compact('records', 'results'));
                 }
+
+                if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
+                    Log::info('Rendering higher degree transcript view');
+                    return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender'));
+                }
+
+                Log::info('Rendering 2018 transcript view');
                 return view('admin.transcript', compact('biodata', 'results', 'gender'));
             }
+
+            if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
+                Log::info('Rendering higher degree transcript view');
+                return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender'));
+            }
+            Log::info('Rendering 2023 transcript view');
             return view('admin.transcript', compact('biodata', 'results', 'gender', 'degreeAwarded', 'cgpa'));
 
             // // **CGPA Calculation (for 2013 and above)**
@@ -919,7 +945,11 @@ class DashboardController extends Controller
                     ->where('sec', $sessionAdmin)
                     ->get();
 
-                if ($results->isEmpty()) {
+                $inComplete = $results->isEmpty() || $results->contains(function ($result) {
+                    return ! $result->course;
+                });
+
+                if ($inComplete) {
                     // If Result2018 is empty, fallback to ResultOld
                     $biodata = TransDetailsNew::with([
                         'transInvoice' => function ($query) {
@@ -943,6 +973,11 @@ class DashboardController extends Controller
 
             Log::info('Biodata: ' . $biodata);
             Log::info('result: ' . $results);
+
+            if ($biodata->degree == 'P.hd' || $biodata->degree == 'M.phil') {
+                return view('admin.approvedHigherTranscript', compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender', 'courierAddress'));
+
+            }
 
             return view('admin.approvedTranscript', compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender', 'courierAddress'));
             // // **CGPA Calculation (for 2013 and above)**
@@ -1030,9 +1065,9 @@ class DashboardController extends Controller
 
             // Validate input
             $request->validate([
-                'matric'         => 'required',
-                'sessionadmin'   => 'required',
-                'id'             => 'required',
+                'matric'          => 'required',
+                'sessionadmin'    => 'required',
+                'id'              => 'required',
                 'transcript_type' => 'nullable|string',
             ]);
 
@@ -1136,7 +1171,7 @@ class DashboardController extends Controller
             $request->validate([
                 'matric'       => 'required',
                 'sessionadmin' => 'required',
-
+                'id'           => 'required',
             ]);
 
             // Normalize session admin value
@@ -1144,6 +1179,7 @@ class DashboardController extends Controller
             // Retrieve transcript record
             $transcript = TransDetailsNew::where('matric', $request->matric)
                 ->where('sessionadmin', $request->sessionadmin)
+                ->where('id', $request->id)
                 ->first();
 
             if (! $transcript) {
@@ -1152,10 +1188,46 @@ class DashboardController extends Controller
 
             // Update transcript record
             $transcript->update([
-                'status' => 3,
+                'status' => 0,
             ]);
 
             return redirect()->route('admin.dashboard.to')->with('success', 'Transcript Rejected Successfully.');
+        } catch (\Exception $e) {
+            Log::error('Error submitting reject transcript: ' . $e->getMessage());
+            return back()->with('error', 'An error occurred while submitting the transcript. Please try again.');
+        }
+    }
+    public function transcriptRejectToHelp(Request $request)
+    {
+        try {
+            Log::info('reject Request Method: ' . $request->method());
+            Log::info('reject Request Data:', $request->all());
+
+            // Validate input
+            $request->validate([
+                'matric'       => 'required',
+                'sessionadmin' => 'required',
+                'id'           => 'required',
+            ]);
+
+            // Normalize session admin value
+
+            // Retrieve transcript record
+            $transcript = TransDetailsNew::where('matric', $request->matric)
+                ->where('sessionadmin', $request->sessionadmin)
+                ->where('id', $request->id)
+                ->first();
+
+            if (! $transcript) {
+                return back()->with('error', 'Transcript record not found.');
+            }
+
+            // Update transcript record
+            $transcript->update([
+                'status' => 0,
+            ]);
+
+            return redirect()->route('admin.dashboard_ki')->with('success', 'Transcript Rejected Successfully.');
         } catch (\Exception $e) {
             Log::error('Error submitting reject transcript: ' . $e->getMessage());
             return back()->with('error', 'An error occurred while submitting the transcript. Please try again.');
@@ -1169,10 +1241,10 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-                'transInvoice' => function ($query) {
-                    $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
-                },
-            ])
+            'transInvoice' => function ($query) {
+                $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
+            },
+        ])
             ->get();
 
         return view('admin.recordProcessed', ['records' => $records]); // Adjust the view path as necessary
@@ -1203,10 +1275,10 @@ class DashboardController extends Controller
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
-                'transInvoice' => function ($query) {
-                    $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
-                },
-            ])
+            'transInvoice' => function ($query) {
+                $query->select('invoiceno', 'purpose', 'dy', 'mth'); // Select only necessary fields
+            },
+        ])
             ->get();
 
         return view('track', ['records' => $records]); // Adjust the view path as necessary
@@ -1261,7 +1333,6 @@ class DashboardController extends Controller
         if (preg_match('/^(\d{4})\/(\d{4})$/', $sessionAdmin, $matches)) {
             $startYear = intval($matches[1]);
             $endYear   = intval($matches[2]);
-
 
             $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
 
@@ -1319,8 +1390,6 @@ class DashboardController extends Controller
                 }
             }
 
-
-
             // Prepare data for PDF generation
             $data = compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender');
 
@@ -1343,30 +1412,22 @@ class DashboardController extends Controller
         }
     }
 
-
-
-
-
-
-
-
-
     /**
      * Calculate CGPA and other academic metrics based on the PHP logic
      */
     private function calculateAcademicMetrics($results, $program = 'Academics')
     {
-        $totalUnits = 0;
-        $totalGradePoints = 0;
-        $unitsPassedCore = 0;
+        $totalUnits          = 0;
+        $totalGradePoints    = 0;
+        $unitsPassedCore     = 0;
         $unitsPassedRequired = 0;
-        $totalUnitsPassed = 0;
-        $coreUnitsToPass = 0;
+        $totalUnitsPassed    = 0;
+        $coreUnitsToPass     = 0;
         $requiredUnitsToPass = 0;
 
         foreach ($results as $result) {
-            $score = $result->score;
-            $courseUnit = $result->cunit;
+            $score        = $result->score;
+            $courseUnit   = $result->cunit;
             $courseStatus = $result->cstatus;
 
             // Add to total units
@@ -1418,24 +1479,24 @@ class DashboardController extends Controller
         // Determine result, remark and CGPA display based on conditions
         $resultData = $this->determineResult($program, $meetsPassConditions, $rawCgpa);
 
-        $cgpa = $resultData['cgpa'];
+        $cgpa   = $resultData['cgpa'];
         $result = $resultData['result'];
         $remark = $resultData['remark'];
 
         return [
-            'cgpa' => $cgpa,
-            'rawCgpa' => $rawCgpa, // Store raw CGPA for reference
-            'result' => $result,
-            'remark' => $remark,
+            'cgpa'                => $cgpa,
+            'rawCgpa'             => $rawCgpa, // Store raw CGPA for reference
+            'result'              => $result,
+            'remark'              => $remark,
             'meetsPassConditions' => $meetsPassConditions,
-            'totalUnits' => $totalUnits,
-            'totalGradePoints' => $totalGradePoints,
-            'unitsPassedCore' => $unitsPassedCore,
+            'totalUnits'          => $totalUnits,
+            'totalGradePoints'    => $totalGradePoints,
+            'unitsPassedCore'     => $unitsPassedCore,
             'unitsPassedRequired' => $unitsPassedRequired,
-            'totalUnitsPassed' => $totalUnitsPassed,
-            'coreUnitsToPass' => $coreUnitsToPass,
+            'totalUnitsPassed'    => $totalUnitsPassed,
+            'coreUnitsToPass'     => $coreUnitsToPass,
             'requiredUnitsToPass' => $requiredUnitsToPass,
-            'passStatus' => $meetsPassConditions ? 'PASS' : 'FAIL'
+            'passStatus'          => $meetsPassConditions ? 'PASS' : 'FAIL',
         ];
     }
 
@@ -1444,7 +1505,7 @@ class DashboardController extends Controller
      */
     private function checkPassConditions($program, $totalUnitsPassed, $unitsPassedCore, $coreUnitsToPass, $unitsPassedRequired, $requiredUnitsToPass)
     {
-        $coreRequirementMet = $unitsPassedCore >= $coreUnitsToPass;
+        $coreRequirementMet     = $unitsPassedCore >= $coreUnitsToPass;
         $requiredRequirementMet = $unitsPassedRequired >= $requiredUnitsToPass;
 
         switch ($program) {

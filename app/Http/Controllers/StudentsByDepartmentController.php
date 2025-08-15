@@ -1,12 +1,11 @@
 <?php
-
 namespace App\Http\Controllers;
 
+use App\Models\DeptNew;
+use App\Models\Result2023;
+use App\Models\StudentRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\Result2023;
-use App\Models\DeptNew;
-use App\Models\StudentRecord;
 use Illuminate\Support\Facades\Log;
 
 class StudentsByDepartmentController extends Controller
@@ -16,11 +15,11 @@ class StudentsByDepartmentController extends Controller
      */
     public function index()
     {
-       dd('This runs');
-         if (!config('features.mass_transcript')) {
-        abort(404);
-        
-    }
+        dd('This runs');
+        if (! config('features.mass_transcript')) {
+            abort(404);
+
+        }
         return view('admin.students_by_department');
     }
 
@@ -50,24 +49,17 @@ class StudentsByDepartmentController extends Controller
      * Fetch students for a specific department where status = 1
      */
 
-
     public function fetchStudents(Request $request)
     {
         try {
             $departmentId = $request->get('department');
 
-            if (!$departmentId) {
+            if (! $departmentId) {
                 return response()->json(['error' => 'Department is required'], 400);
             }
 
             // Add logging to debug the query
             Log::info('Fetching students for department: ' . $departmentId);
-
-            // Check if the Result2023 model and table exist
-            if (!class_exists('App\\Models\\Result2023')) {
-                Log::error('Result2023 model not found');
-                return response()->json(['error' => 'Result2023 model not found'], 500);
-            }
 
             $query = Result2023::where('dept', $departmentId)
                 ->where('status', 1);
@@ -77,54 +69,63 @@ class StudentsByDepartmentController extends Controller
             Log::info('Query Bindings: ' . json_encode($query->getBindings()));
 
             $students = $query
-                ->with(['department', 'studentRecord']) // Include studentRecord relationship
+                ->with(['department', 'studentRecord'])
                 ->select('matric', 'dept', 'yr_of_entry as session')
                 ->orderBy('matric')
                 ->distinct()
                 ->get()
                 ->map(function ($student) {
-                    $name = 'Record not in Student Database';
+                    $name              = 'Record not in Student Database';
+                    $completenessScore = 0;
 
-                    // Better handling of student name
-                    if ($student->studentRecord && !empty($student->studentRecord->name)) {
+                    // Handle name display logic
+                    if ($student->studentRecord && ! empty(trim($student->studentRecord->name ?? ''))) {
                         $name = trim($student->studentRecord->name);
-                    } elseif (isset($student->name) && !empty($student->name)) {
+                    } elseif (isset($student->name) && ! empty(trim($student->name))) {
                         $name = trim($student->name);
-                    }
-
-                    // Handle empty names
-                    if (empty($name) || $name === ' ') {
+                    } else {
                         $name = 'Name not found';
                     }
 
+                    // Calculate completeness score for ALL records that have studentRecord
+                    if ($student->studentRecord) {
+                        $record = $student->studentRecord;
+                        $completenessScore += (! is_null($record->name) && trim($record->name) !== '') ? 1 : 0;
+                        $completenessScore += (! is_null($record->user_id) && trim($record->user_id) !== '') ? 1 : 0;
+                        $completenessScore += (! is_null($record->dept) && trim($record->dept) !== '') ? 1 : 0;
+                        $completenessScore += (! is_null($record->specialization) && trim($record->specialization) !== '') ? 1 : 0;
+                        $completenessScore += (! is_null($record->specialization2) && trim($record->specialization2) !== '') ? 1 : 0;
+                    }
+                    // If no studentRecord exists at all, completeness score remains 0
+
                     return [
-                        'matric' => $student->matric,
-                        'name' => $name,
-                        'department' => $student->department->department ?? 'Unknown Department',
-                        'session' => $student->session ?? 'Unknown Session'
+                        'matric'             => $student->matric,
+                        'name'               => $name,
+                        'department'         => $student->department->department ?? 'Unknown Department',
+                        'session'            => $student->session ?? 'Unknown Session',
+                        'completeness_score' => $completenessScore,
                     ];
                 });
-
             Log::info('Found ' . $students->count() . ' students');
 
             return response()->json([
                 'students' => $students,
-                'count' => $students->count()
+                'count'    => $students->count(),
             ]);
         } catch (\Illuminate\Database\QueryException $e) {
             Log::error('Database Query Error: ' . $e->getMessage());
             Log::error('SQL: ' . $e->getSql());
             return response()->json([
-                'error' => 'Database query failed: ' . $e->getMessage(),
-                'details' => config('app.debug') ? $e->getTrace() : 'Enable debug mode for more details'
+                'error'   => 'Database query failed: ' . $e->getMessage(),
+                'details' => config('app.debug') ? $e->getTrace() : 'Enable debug mode for more details',
             ], 500);
         } catch (\Exception $e) {
             Log::error('Error fetching students: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'error' => 'Error fetching students: ' . $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
+                'line'  => $e->getLine(),
+                'file'  => $e->getFile(),
             ], 500);
         }
     }
@@ -137,18 +138,25 @@ class StudentsByDepartmentController extends Controller
      */
     public function viewTranscript(Request $request)
     {
-        $matric = $request->input('matric');
+        $matric       = $request->input('matric');
         $sessionAdmin = $request->input('sessionadmin');
 
-        if (!$matric || !$sessionAdmin) {
+        if (! $matric || ! $sessionAdmin) {
             return back()->with('error', 'Matric number and session are required');
         }
 
         try {
             // Get student data from StudentRecord model
-            $student = StudentRecord::where('matric', $matric)->first();
+            $student = StudentRecord::where('matric', $matric)
+                ->whereNotNull('name')
+                ->where('name', '!=', '')
+                ->first();
 
-            if (!$student) {
+// Fallback if no record with name exists
+            if (! $student) {
+                $student = StudentRecord::where('matric', $matric)->first();
+            }
+            if (! $student) {
                 return back()->with('error', 'Student record not found');
             }
 
@@ -176,35 +184,32 @@ class StudentsByDepartmentController extends Controller
                 $gender = 'Not Specified';
             }
 
-
             $programCgpa = DB::table('programme_cgpa')
                 ->where('degree_id', $results->first()->degree ?? null)
                 ->first();
             $program = $programCgpa->type; // Default to Academics if not provided
 
-
-
             $academicData = $this->calculateAcademicMetrics($results, $program);
 
             // Get additional student info from StudentRecord if needed
             $studentRecord = [
-                'biodata' => $student,
-                'gender' => $gender,
-                'results' => $results,
-                'program' => $program,
-                'cgpa' => $academicData['cgpa'], // Will be actual CGPA or "-" based on conditions
-                'rawCgpa' => $academicData['rawCgpa'], // Actual calculated CGPA for reference
-                'result' => $academicData['result'], // "PASS" or "-"
-                'remark' => $academicData['remark'], // "Ph.D", "M.Phil", "NG", etc.
+                'biodata'             => $student,
+                'gender'              => $gender,
+                'results'             => $results,
+                'program'             => $program,
+                'cgpa'                => $academicData['cgpa'],    // Will be actual CGPA or "-" based on conditions
+                'rawCgpa'             => $academicData['rawCgpa'], // Actual calculated CGPA for reference
+                'result'              => $academicData['result'],  // "PASS" or "-"
+                'remark'              => $academicData['remark'],  // "Ph.D", "M.Phil", "NG", etc.
                 'meetsPassConditions' => $academicData['meetsPassConditions'],
-                'degreeAwarded' => $rendition->naration ?? 'Not Specified',
-                'totalUnits' => $academicData['totalUnits'],
-                'totalGradePoints' => $academicData['totalGradePoints'],
-                'unitsPassedCore' => $academicData['unitsPassedCore'],
+                'degreeAwarded'       => $rendition->naration ?? 'Not Specified',
+                'totalUnits'          => $academicData['totalUnits'],
+                'totalGradePoints'    => $academicData['totalGradePoints'],
+                'unitsPassedCore'     => $academicData['unitsPassedCore'],
                 'unitsPassedRequired' => $academicData['unitsPassedRequired'],
-                'totalUnitsPassed' => $academicData['totalUnitsPassed'],
-                'coreUnitsToPass' => $academicData['coreUnitsToPass'],
-                'requiredUnitsToPass' => $academicData['requiredUnitsToPass']
+                'totalUnitsPassed'    => $academicData['totalUnitsPassed'],
+                'coreUnitsToPass'     => $academicData['coreUnitsToPass'],
+                'requiredUnitsToPass' => $academicData['requiredUnitsToPass'],
             ];
 
             return view('admin.view_transcript', $studentRecord);
@@ -217,17 +222,17 @@ class StudentsByDepartmentController extends Controller
      */
     private function calculateAcademicMetrics($results, $program = 'Academics')
     {
-        $totalUnits = 0;
-        $totalGradePoints = 0;
-        $unitsPassedCore = 0;
+        $totalUnits          = 0;
+        $totalGradePoints    = 0;
+        $unitsPassedCore     = 0;
         $unitsPassedRequired = 0;
-        $totalUnitsPassed = 0;
-        $coreUnitsToPass = 0;
+        $totalUnitsPassed    = 0;
+        $coreUnitsToPass     = 0;
         $requiredUnitsToPass = 0;
 
         foreach ($results as $result) {
-            $score = $result->score;
-            $courseUnit = $result->cunit;
+            $score        = $result->score;
+            $courseUnit   = $result->cunit;
             $courseStatus = $result->cstatus; // Assuming 'C' = Core, 'R' = Required, 'E'/'EE' = Elective
 
             // Add to total units
@@ -279,24 +284,24 @@ class StudentsByDepartmentController extends Controller
         // Determine result, remark and CGPA display based on conditions
         $resultData = $this->determineResult($program, $meetsPassConditions, $rawCgpa);
 
-        $cgpa = $resultData['cgpa'];
+        $cgpa   = $resultData['cgpa'];
         $result = $resultData['result'];
         $remark = $resultData['remark'];
 
         return [
-            'cgpa' => $cgpa,
-            'rawCgpa' => $rawCgpa, // Store raw CGPA for reference
-            'result' => $result,
-            'remark' => $remark,
+            'cgpa'                => $cgpa,
+            'rawCgpa'             => $rawCgpa, // Store raw CGPA for reference
+            'result'              => $result,
+            'remark'              => $remark,
             'meetsPassConditions' => $meetsPassConditions,
-            'totalUnits' => $totalUnits,
-            'totalGradePoints' => $totalGradePoints,
-            'unitsPassedCore' => $unitsPassedCore,
+            'totalUnits'          => $totalUnits,
+            'totalGradePoints'    => $totalGradePoints,
+            'unitsPassedCore'     => $unitsPassedCore,
             'unitsPassedRequired' => $unitsPassedRequired,
-            'totalUnitsPassed' => $totalUnitsPassed,
-            'coreUnitsToPass' => $coreUnitsToPass,
+            'totalUnitsPassed'    => $totalUnitsPassed,
+            'coreUnitsToPass'     => $coreUnitsToPass,
             'requiredUnitsToPass' => $requiredUnitsToPass,
-            'passStatus' => $meetsPassConditions ? 'PASS' : 'FAIL'
+            'passStatus'          => $meetsPassConditions ? 'PASS' : 'FAIL',
         ];
     }
 
@@ -305,7 +310,7 @@ class StudentsByDepartmentController extends Controller
      */
     private function checkPassConditions($program, $totalUnitsPassed, $unitsPassedCore, $coreUnitsToPass, $unitsPassedRequired, $requiredUnitsToPass)
     {
-        $coreRequirementMet = $unitsPassedCore >= $coreUnitsToPass;
+        $coreRequirementMet     = $unitsPassedCore >= $coreUnitsToPass;
         $requiredRequirementMet = $unitsPassedRequired >= $requiredUnitsToPass;
 
         switch ($program) {

@@ -110,7 +110,7 @@
                 <div class="menu-container flex-grow-1">
                     @php
                         $role = (session('admin_user')->role) ?? null;
-                        $mass = false; // Assuming mass transcript is available for all roles
+                        $mass = true; // Assuming mass transcript is available for all roles
                     @endphp
 
                     <ul id="menu" class="menu">
@@ -134,8 +134,8 @@
                         @if($role == 3) {{-- KI Role --}}
                         <li>
                             <a href="{{ route('admin.dashboard.ki') }}" data-href="#">
-                                <i data-acorn-icon="keyboard" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Keying In</span>
+                                <i data-acorn-icon="inbox" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Key-In Request</span>
                             </a>
                         </li>
                         @endif
@@ -162,7 +162,7 @@
                         <li>
                             <a href="{{ route('admin.transrecevedashboard') }}" data-href="#">
                                 <i data-acorn-icon="inbox" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Transcript Receive</span>
+                                <span class="label">Transcript Request</span>
                             </a>
                         </li>
                         @endif
@@ -186,23 +186,34 @@
                         </li>
                         @endif
 
-                        <!-- Edit Result - Available to specific roles -->
-                        @if(in_array($role, [3, 2, 7])) {{-- KI, PO, FO roles --}}
+                        @if ($role == 3)
+                        
+                        <!-- Upload Result - KI -->
                         <li>
-                            <a href="{{ route('admin.edit_transcript_realtime') }}" data-href="#">
-                                <i data-acorn-icon="edit" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Edit Result</span>
+                            <a href="{{ route('result_old.upload_form') }}" data-href="#">
+                                <i data-acorn-icon="keyboard" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Upload Result</span>
                             </a>
                         </li>
                         @endif
 
-                        @if ($mass)
+                        <!-- Edit Result - Available to specific roles -->
+                        @if(in_array($role, [3, 2, 6, 7])) {{-- KI, PO, Help, FO roles --}}
+                        <li>
+                            <a href="{{ route('admin.edit_transcript_realtime') }}" data-href="#">
+                                <i data-acorn-icon="edit" class="icon" data-acorn-size="18"></i>
+                                <span class="label">Edit/View Result</span>
+                            </a>
+                        </li>
+                        @endif
+
+                        @if ($mass && ($role == 7 || $role == 2))
                         
                         <!-- Students by Department - Available to all roles -->
                         <li>
                             <a href="{{ route('admin.students_by_department') }}" data-href="#">
-                                <i data-acorn-icon="user" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Mass Transcript</span>
+                                <i data-acorn-icon="print" class="icon" data-acorn-size="18"></i>
+                                <span class="label">2025 Convocation</span>
                             </a>
                         </li>
                         @endif

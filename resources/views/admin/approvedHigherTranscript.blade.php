@@ -15,7 +15,7 @@
         html {
             background: #fff !important;
             font-family: serif !important;
-            font-size: 1rem !important;
+            font-size: 1.1rem !important;
         }
 
         th {
@@ -43,6 +43,7 @@
         .sign img {
             width: 120px;
         }
+
         .sign2 img {
             width: 120px;
             border-bottom: 2px solid black;
@@ -64,6 +65,12 @@
         .bb {
             border-bottom: 2px solid black;
         }
+
+        .small_result td {
+            padding: 0 !important;
+        }
+
+
 
         .afterHead2 {
             padding-top: 12rem !important;
@@ -207,6 +214,19 @@
         .mb-4 {
             margin-bottom: 4rem !important;
         }
+
+        .small_result {
+            width: 70%;
+            font-size: 0.75rem;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        .alignLeft {
+            text-align: left;
+            display: flex;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 
@@ -268,120 +288,101 @@
                         @else
                             <div class="afterHead afterHead2">
                     @endif
-                    <p class="bb text-center"><strong>PERMANENT POSTGRADUATE STUDENT'S ACADEMIC RECORD AND
-                            TRANSCRIPT</strong> </p>
+                    <p class=" text-center">
+                        <strong>{{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}</strong>
+                    </p>
+                    <p class=" text-center">(MATRIC NO. S.I. {{ $biodata->matric }}) - AWARD OF {{ $biodata->degree }}
+                        DEGREE</p>
 
 
+                    <div>
+                        <p class="bold mb-3 alignLeft">13 June, 2024</p>
+                        <p class="add-width mb-4">{{ $courierAddress ?? ($biodata->ecopy_address ?? 'N/A') }}</p>
 
-                    <div class="info-container">
-                        <strong>Name (Surname Last):</strong>
-                        <span>{{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}</span>
+                        <p>This is to certify that the above named was awarded the degree of
+                            <strong>{{ $biodata->degree == 'Ph.D' ? 'Doctor of Philosophy (P.hD)' : 'Master of Philosophy (M.Phil)' }}
 
-                        <strong>Gender:</strong>
-                        <span> {{ $biodata->sex ?? $gender }}</span>
-
-                        <strong>Matriculation Number:</strong>
-                        <span>{{ $biodata->matric }}</span>
-
-                        <strong>Session Admitted:</strong>
-                        <span>{{ $biodata->sessionadmin ?? $results->first()->yr_of_entry }}</span>
-
-                        <strong>Department:</strong>
-                        <span>{{ $biodata->department ?? ($results->first()->department->department ?? 'N/A') }}</span>
-
-                        <strong>Faculty:</strong>
-                        <span>{{ $biodata->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}</span>
-                    </div>
-
-
-
-                </div>
-
-                <hr>
-                <div class="tm_table tm_style1">
-                    <div class="overflow-x-auto">
-                        <table class="w-full ">
-                            <thead>
-                                <tr class="">
-                                    <th class="">Course Code</th>
-                                    <th class="">Course Title</th>
-                                    <th class="">Units</th>
-                                    <th class="">Status</th>
-                                    <th class="">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($results as $result)
-                                    <tr>
-                                        <td class="text-center">
-                                            {{ optional($result->course)->course_code ?? (optional($result->course)->course ?? 'N/A') }}
-                                        </td>
-                                        <td class="">
-                                            {{ $result->course->title ?? ($result->course->course_title ?? 'N/A') }}
-                                        </td>
-                                        <td class="text-center">
-                                            {{ $result->course->unit ?? ($result->cunit ?? 'N/A') }}
-                                        </td>
-
-                                        <td class="text-center">
-                                            {{ $result->status ?? ($result->cstatus ?? 'N/A') }}
-                                        </td>
-                                        <td class="text-center">{{ $result->score }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <hr>
-                        <p class="text-center bold"><strong>
-                                {{ $cgpa <= 7 ? 'Cumulative Grade Point Average (CGPA)' : 'Waited Average (WA)' }}
-                                Score for the
-                                Degree
-                                of Master is </strong> {{ $cgpa ?? 'N/A' }}</p>
-                        <div class="test">
-
-                            <div>
-                                <p class="text-center bold"><strong>Degree Awarded:
-                                    </strong>{{ $degreeAwarded ?? 'N/A' }}</strong> </p>
-                            </div>
-                            <div>
-                                <p class="text-center bold"><strong>Date of Award:
-                                    </strong>{{ $dateAward ?? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') }}</strong>
-                                </p>
-                            </div>
-
-
-
-                        </div>
-                        <p><strong>Area of Specialization:</strong>
-                            {{ $biodata->feildofinterest ?? ($results->first()->specialization->field_title ?? 'N/A') }}
+                            </strong>from the <em> Department of {{ $biodata->department ?? 'N/A' }}</em>,
+                            Faculty
+                            of {{ $biodata->faculty ?? 'N/A' }}, University of Ibadan, Ibadan, Nigeria on
+                            <strong>{{ \Carbon\Carbon::parse($biodata->dateAward)->format('d F, Y') }}</strong>.
                         </p>
 
-                        <hr>
+                        @if ($results->isNotEmpty())
+                            <div class="tm_table tm_style1 small_result">
 
-                        <div class="test mt">
+                                <p>Below is a list of the courses the candidate offered and passed</p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full ">
+                                        <thead>
+                                            <tr class="">
+                                                <th class="">Course Code</th>
+                                                <th class="">Course Title</th>
+                                                <th class="">Units</th>
+                                                <th class="">Status</th>
+                                                <th class="">Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($results as $result)
+                                                <tr>
+                                                    <td class="text-center">
+                                                        {{ optional($result->course)->course_code ?? (optional($result->course)->course ?? 'N/A') }}
+                                                    </td>
+                                                    <td class="">
+                                                        {{ $result->course->title ?? ($result->course->course_title ?? 'N/A') }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {{ $result->course->unit ?? ($result->cunit ?? 'N/A') }}
+                                                    </td>
 
-                            <div class="sign">
-                                <img src="{{ $biodata->status == 8 ? asset('assets/img/ProvostSign.png') : '' }}"
-                                    alt="Not Approved" srcset="">
-                                <hr>
-                                <p>
+                                                    <td class="text-center">
+                                                        {{ $result->status ?? ($result->cstatus ?? 'N/A') }}
+                                                    </td>
+                                                    <td class="text-center">{{ $result->score }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                    <hr>
+                                    <p class="text-center bold"><strong>
+                                            Cumulative Grade Point Average (CGPA) Score for the
+                                            Degree is </strong> {{ $cgpa ?? 'N/A' }}</p>
 
-                                    PROVOST, POSTGRADUATE COLLEGE
-                                </p>
+
+
+                                    <hr>
+
+
+                                </div>
                             </div>
-                            <div class="sign">
-                                <img src="{{ $biodata->status == '8' ? asset('assets/img/DR-Transcript.png') : '' }}"
-                                    alt="Not Approved" srcset="">
-                                <hr>
-                                <p>DEPUTY REGISTRAR <br>EXAMS AND RECORDS, <br>POSTGRADUATE COLLEGE</p>
-                            </div>
 
+                        @endif
 
+                        <p>The title of his Thesis was:</p>
 
+                        <p class="bold italic mb-2">"{{ $biodata->thesis_title ?? 'N/A' }}".</p>
+
+                        @if ($results->isEmpty())
+                            <p>The programme was not assessed through course work but through thesis hence an academic
+                                transcript cannot be issued.</p>
+                        @endif
+                        <p class="mb-4">I hope you will find the above information useful.</p>
+
+                        <div class="sign2">
+                            <img src="{{ $biodata->status == '8' ? asset('assets/img/DR-Transcript.png') : '' }}"
+                                alt="Not Approved" srcset="">
+                            <p class="italic">
+                                O. A. Olaoye <br>
+                                Deputy Registrar <br>
+                                (Examinations and Records)
+                            </p>
                         </div>
-
                     </div>
+
                 </div>
+
+
 
 
                 <div class="page-break"></div>

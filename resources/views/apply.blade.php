@@ -481,7 +481,7 @@
             ];
             
             function setDispatchCountryOptions(type) {
-                if (type === 'Transcript Within Nigeria') {
+                if (type.includes('Within Nigeria')) {
                     // Update all dispatch country dropdowns
                     $('.dispatch-country').each(function() {
                         $(this).html('<option value="Nigeria">Nigeria</option>');

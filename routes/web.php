@@ -119,7 +119,7 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::get('/transrecieveDashboard', [DashboardController::class, 'transrecieveDashboard'])->name('transrecieveDashboard');
     Route::get('/approved-record', [DashboardController::class, 'recordApproved'])->name('recordApproved');
     Route::post('/logout', [AdminLoginController::class, 'destroy'])->name('logout');
-    $mass = false; // Assuming mass transcript is available for all roles
+    $mass = true; // Assuming mass transcript is available for all roles
     if ($mass) {
         # code...
         // Students by Department Routes
@@ -145,7 +145,8 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::post('/view-transcript', [DashboardController::class, 'processView'])->name('processView');
     Route::post('/approve', [DashboardController::class, 'approve'])->name('transcriptApprove');
     Route::post('/reject', [DashboardController::class, 'reject'])->name('transcriptReject');
-    Route::post('/reject-to-key', [DashboardController::class, 'reject'])->name('transcriptRejectToKey');
+    Route::post('/reject-to-key', [DashboardController::class, 'transcriptRejectToKey'])->name('transcriptRejectToKey');
+    Route::post('/reject-to-help', [DashboardController::class, 'transcriptRejectToHelp'])->name('transcriptRejectToHelp');
     Route::post('/transcript/submit', [DashboardController::class, 'submitForApproval'])->name('transcriptSubmit');
 
     // Transcript editing routes

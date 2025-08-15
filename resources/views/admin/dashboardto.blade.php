@@ -213,11 +213,11 @@
                                                         View NOR
                                                     </button>
                                                     <button class="btn btn-danger btn-sm"
-                                                        data-matric="{{ $record->matric }}"
-                                                        data-sessionadmin="{{ $record->sessionadmin }}"
-                                                        onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}', '{{ $record->email }}')">
-                                                        Reject
-                                                    </button>
+                                                            data-matric="{{ $record->matric }}"
+                                                            data-sessionadmin="{{ $record->sessionadmin }}"
+                                                            onclick="rejectRecord(this,'{{ $record->matric }}', '{{ $record->sessionadmin }}','{{ $record->id }}')">
+                                                            Reject
+                                                        </button>
 
                                                     <button class="btn btn-success btn-sm w-auto text-nowrap"
                                                         data-matric="{{ $record->matric }}"
@@ -420,46 +420,78 @@
                     }
 
 
-                    function rejectRecord(button, matric, sessionadmin) {
-                        console.log("Processing record for:", matric, sessionadmin); // Debugging log
+                   function rejectRecord(button, matric, sessionadmin, id) {
+                        console.log("Processing record for:", matric, sessionadmin);
 
-                        button.disabled = true;
-                        button.innerHTML =
-                            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
+                        // Show SweetAlert confirmation dialog for rejection
+                        Swal.fire({
+                            title: 'Confirm Rejection',
+                            text: `Are you sure you want to reject the transcript for student ${matric}?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Yes, reject it!',
+                            cancelButtonText: 'Cancel',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // User confirmed, proceed with rejection
+                                button.disabled = true;
+                                button.innerHTML =
+                                    `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...`;
 
-                        const url = '{{ route('admin.transcriptRejectToKey') }}'; // Named route for the backend action
+                                const url = '{{ route('admin.transcriptRejectToKey') }}';
 
-                        // Create a form dynamically to submit via POST
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = url;
+                                // Create a form dynamically to submit via POST
+                                const form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = url;
 
-                        // Add CSRF token
-                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = '_token';
-                        csrfInput.value = csrfToken;
-                        form.appendChild(csrfInput);
+                                // Add CSRF token
+                                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                const csrfInput = document.createElement('input');
+                                csrfInput.type = 'hidden';
+                                csrfInput.name = '_token';
+                                csrfInput.value = csrfToken;
+                                form.appendChild(csrfInput);
 
-                        // Add matric and sessionadmin values
-                        const matricInput = document.createElement('input');
-                        matricInput.type = 'hidden';
-                        matricInput.name = 'matric';
-                        matricInput.value = matric;
-                        form.appendChild(matricInput);
+                                // Add matric and sessionadmin values
+                                const matricInput = document.createElement('input');
+                                matricInput.type = 'hidden';
+                                matricInput.name = 'matric';
+                                matricInput.value = matric;
+                                form.appendChild(matricInput);
 
-                        const sessionAdminInput = document.createElement('input');
-                        sessionAdminInput.type = 'hidden';
-                        sessionAdminInput.name = 'sessionadmin';
-                        sessionAdminInput.value = sessionadmin;
-                        form.appendChild(sessionAdminInput);
+                                const sessionAdminInput = document.createElement('input');
+                                sessionAdminInput.type = 'hidden';
+                                sessionAdminInput.name = 'sessionadmin';
+                                sessionAdminInput.value = sessionadmin;
+                                form.appendChild(sessionAdminInput);
 
-                        console.log("Submitting form to:", url); // Debugging log
+                                const idInput = document.createElement('input');
+                                idInput.type = 'hidden';
+                                idInput.name = 'id';
+                                idInput.value = id;
+                                form.appendChild(idInput);
 
-                        // Append form to the body and submit it
-                        document.body.appendChild(form);
-                        form.submit();
+                                console.log("Submitting form to:", url);
+
+                                // Append form to the body and submit it
+                                document.body.appendChild(form);
+                                form.submit();
+
+                                // Show processing message (optional)
+                                Swal.fire({
+                                    title: 'Processing...',
+                                    text: 'Transcript rejection is being processed.',
+                                    icon: 'info',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                            // If user cancels, do nothing - button remains enabled
+                        });
                     }
 
                     window.addEventListener("pageshow", function() {

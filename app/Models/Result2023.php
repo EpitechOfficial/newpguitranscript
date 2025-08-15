@@ -38,8 +38,11 @@ class Result2023 extends Model
 
     public function studentRecord()
     {
-        return $this->belongsTo(StudentRecord::class, 'matric', 'matric');
+        return $this->belongsTo(StudentRecord::class, 'matric', 'matric')
+        ->whereNotNull('name')
+        ->where('name', '!=', '');
     }
+    
 
     public function specialization()
     {
