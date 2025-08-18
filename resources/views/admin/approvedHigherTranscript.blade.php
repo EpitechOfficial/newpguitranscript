@@ -288,17 +288,18 @@
                         @else
                             <div class="afterHead afterHead2">
                     @endif
-                    <p class=" text-center">
+                    
+
+
+                    <div>
+                        <p class="bold mb-3 alignLeft">{{\Carbon\Carbon::now()->format('d F, Y')}}</p>
+                        <p class="add-width mb-4">{{ $courierAddress ?? ($biodata->ecopy_address ?? 'N/A') }}</p>
+
+<p class=" text-center">
                         <strong>{{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}</strong>
                     </p>
                     <p class=" text-center">(MATRIC NO. S.I. {{ $biodata->matric }}) - AWARD OF {{ $biodata->degree }}
                         DEGREE</p>
-
-
-                    <div>
-                        <p class="bold mb-3 alignLeft">13 June, 2024</p>
-                        <p class="add-width mb-4">{{ $courierAddress ?? ($biodata->ecopy_address ?? 'N/A') }}</p>
-
                         <p>This is to certify that the above named was awarded the degree of
                             <strong>{{ $biodata->degree == 'Ph.D' ? 'Doctor of Philosophy (P.hD)' : 'Master of Philosophy (M.Phil)' }}
 
@@ -425,7 +426,7 @@
                         <p class="bt text-center"><strong>Contact us: <span
                                     class="underline">records@pgcollege.ui.edu.ng</span></strong> </p>
                         <div>
-                            <p class="bold mb-3">13 June, 2024</p>
+                            <p class="bold mb-3">{{\Carbon\Carbon::now()->format('d F, Y')}}</p>
                             <p class="add-width mb-4">{{ $courierAddress ?? ($biodata->ecopy_address ?? 'N/A') }}</p>
 
                             <p class="bold mb-2">Academic Transcript:

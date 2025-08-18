@@ -202,7 +202,7 @@
             <p class="bt text-center"><strong>Contact us: <span
                         class="underline">records@pgcollege.ui.edu.ng</span></strong> </p>
             <div>
-                <p class="bold mb-3">13 June, 2024</p>
+                <p class="bold mb-3">{{\Carbon\Carbon::now()->format('d F, Y')}}</p>
                 <p class="add-width mb-4">{{ $biodata->ecopy_address ?? 'N/A' }}</p>
                 <p class="bold">Academic Transcript:
                     {{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}

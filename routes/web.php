@@ -148,6 +148,7 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::post('/reject-to-key', [DashboardController::class, 'transcriptRejectToKey'])->name('transcriptRejectToKey');
     Route::post('/reject-to-help', [DashboardController::class, 'transcriptRejectToHelp'])->name('transcriptRejectToHelp');
     Route::post('/transcript/submit', [DashboardController::class, 'submitForApproval'])->name('transcriptSubmit');
+    Route::post('/transcript/submit-higher', [DashboardController::class, 'submitForApprovalHigher'])->name('transcriptSubmitHigher');
 
     // Transcript editing routes
     Route::get('/edit-transcript-realtime', [ResultOldController::class, 'editTranscriptRealtimePage'])->name('edit_transcript_realtime');

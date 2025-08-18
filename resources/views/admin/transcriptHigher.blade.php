@@ -220,23 +220,36 @@
                                 <div>
                                     <label class="font-semibold block">Degree Awarded:</label>
                                     <input type="text" name="degreeAward"
-                                        value="{{ $degreeAwarded ?? (in_array($biodata->degree, ['Ph.D', 'P.hd']) ?? 'Doctor of Philosophy' ?? (in_array($biodata->degree, ['M.Phil', 'M.phil']) ?? 'Doctor of Philosophy' ?? 'Not Specified')) }}"
+                                        value="{{ $degreeAwarded ?? (in_array($biodata->degree, ['Ph.D', 'P.hd']) ?? ('Doctor of Philosophy' ?? (in_array($biodata->degree, ['M.Phil', 'M.phil']) ?? ('Doctor of Philosophy' ?? 'Not Specified')))) }}"
                                         class="border  p-1 px-2 w-full rounded-md">
                                 </div>
                                 <div>
-                                    <label class="font-semibold block">Date of Award:</label>
+                                    <label class="font-semibold block">CGPA:</label>
+                                    <input type="number" name="cgpa" value="{{ $cgpa ?? '0' }}"
+                                        class="border  p-1 px-2 w-full rounded-md">
+                                </div>
+                                <div>
+                                    <strong><label class="font-semibold block">Date of Award:</label></strong>
 
                                     <input type="text" name="awardDate"
-                                        value="{{ optional($results->first())->effectivedate ? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') : 'N/A' }}"
+                                        value="{{ optional($dateAward) ? \Carbon\Carbon::parse($dateAward)->format('d F, Y') : 'N/A' }}"
                                         class="border p-1 px-2 w-full rounded-md">
 
                                 </div>
 
 
                             </div>
-                            <p><strong>Area of Specialization:</strong>
-                                {{ $biodata->feildofinterest ?? ($results->first()->specialization->field_title ?? 'N/A') }}
-                            </p>
+                            <strong>
+                                <p class="bold" style="text-align:center; margin-bottom:0">Thesis Title:</p>
+                            </strong>
+                            <div style="display: flex; justify-content: center;">
+
+                                <textarea name="thesisTitle" placeholder="Enter Thesis Title" class="border p-1 px-2 w-full rounded-md" cols="50">
+                        {{ $thesisTitle }}
+                        </textarea>
+
+
+                            </div>
 
                         </div>
                     </div>
@@ -249,10 +262,14 @@
                                 class="border p-1 px-2 w-full rounded-md">
                         </div>
                         <div>
+
+                            <input type="hidden" name="cgpa" value="{{ $biodata->award ?? '0' }}">
+                        </div>
+                        <div>
                             <strong><label class="font-semibold block">Date of Award:</label></strong>
 
                             <input type="text" name="awardDate"
-                                value="{{ optional($results->first())->effectivedate ? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') : 'N/A' }}"
+                                value="{{ optional($dateAward) ? \Carbon\Carbon::parse($dateAward)->format('d F, Y') : 'N/A' }}"
                                 class="border p-1 px-2 w-full rounded-md">
 
                         </div>
@@ -260,14 +277,17 @@
 
                     </div>
 
-                            <strong><p class="bold" style="text-align:center; margin-bottom:0">Thesis Title:</p></strong>
+                    <strong>
+                        <p class="bold" style="text-align:center; margin-bottom:0">Thesis Title:</p>
+                    </strong>
                     <div style="display: flex; justify-content: center;">
 
-<textarea name="thesisTitle" placeholder="Enter Thesis Title"
-                            class="border p-1 px-2 w-full rounded-md" cols="50"></textarea>
-                           
+                        <textarea name="thesisTitle" placeholder="Enter Thesis Title" class="border p-1 px-2 w-full rounded-md" cols="50">
+                        {{ $thesisTitle }}
+                        </textarea>
 
-                        </div>
+
+                    </div>
 
 
 
@@ -275,7 +295,8 @@
                 @endif
 
 
-                <form action="{{ route('admin.transcriptSubmit') }}" method="POST" onsubmit="return validateForm()">
+                <form action="{{ route('admin.transcriptSubmitHigher') }}" method="POST"
+                    onsubmit="return validateForm()">
                     @csrf
                     @if ($biodata)
                         <input type="hidden" name="matric" value="{{ $biodata->matric }}">
@@ -288,6 +309,7 @@
                     <input type="hidden" name="cgpa" id="cgpaInput">
                     <input type="hidden" name="degreeAward" id="degreeAwardInput">
                     <input type="hidden" name="awardDate" id="awardDateInput">
+                    <input type="hidden" name="thesisTitle" id="thesisTitleInput">
 
 
                     <div class="btn-approve mt-4">
@@ -302,10 +324,11 @@
                         let cgpa = document.querySelector("input[name='cgpa']").value.trim();
                         let degreeAward = document.querySelector("input[name='degreeAward']").value.trim();
                         let awardDate = document.querySelector("input[name='awardDate']").value.trim();
+                        let thesisTitle = document.querySelector("textarea[name='thesisTitle']").value.trim();
 
                         let submitButton = document.querySelector('.btn-approve button');
-                        if (cgpa === "" || degreeAward === "" || awardDate === "") {
-                            alert("Please fill in both CGPA and Degree Award fields before submitting.");
+                        if (thesisTitle === "" || degreeAward === "" || awardDate === "") {
+                            alert("Please fill all required fields before submitting.");
                             return false;
                         }
 
@@ -315,6 +338,7 @@
                             `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Submitting...`;
 
                         document.getElementById("cgpaInput").value = cgpa;
+                        document.getElementById("thesisTitleInput").value = thesisTitle;
                         document.getElementById("degreeAwardInput").value = degreeAward;
                         document.getElementById("awardDateInput").value = awardDate;
 
@@ -326,6 +350,9 @@
                 <script>
                     document.querySelector("form").addEventListener("submit", function() {
                         document.getElementById("cgpaInput").value = document.querySelector("input[name='cgpa']").value;
+                        document.getElementById("thesisTitleInput").value = document.querySelector(
+                                "textarea[name='thesisTitle']")
+                            .value;
                         document.getElementById("degreeAwardInput").value = document.querySelector("input[name='degreeAward']")
                             .value;
                     });

@@ -62,7 +62,9 @@ class StudentsByDepartmentController extends Controller
             Log::info('Fetching students for department: ' . $departmentId);
 
             $query = Result2023::where('dept', $departmentId)
-                ->where('status', 1);
+                ->where('status', 1)
+                ->where('session_of_grad','!=' , null)
+                ->where('resulttype','!=' , null);
 
             // Log the SQL query for debugging
             Log::info('SQL Query: ' . $query->toSql());
@@ -163,6 +165,8 @@ class StudentsByDepartmentController extends Controller
             // Get results from Result2023 model
             $results = Result2023::where('matric', $matric)
                 ->where('yr_of_entry', $sessionAdmin)
+                ->where('session_of_grad','!=' , null)
+                ->where('resulttype','!=' , null)
                 ->with(['course', 'department', 'faculty']) // Load relationships
                 ->get();
 

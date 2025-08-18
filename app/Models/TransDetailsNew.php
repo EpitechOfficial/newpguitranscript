@@ -27,6 +27,7 @@ class TransDetailsNew extends Model
         'award',
         'dateAward',
         'programme',
+        'thesis_title',
         'feildofinterest',
         'email',
         'status',
