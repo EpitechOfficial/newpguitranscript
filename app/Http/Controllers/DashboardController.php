@@ -253,8 +253,8 @@ class DashboardController extends Controller
         $user   = User::where('matric', $matric)->first();
 
         // Check if it's an e-copy request
-        $isEcopy       = Str::contains($request->transcript_type, ['E-Copy', 'Soft Copy']);
-        $isStudentCopy = Str::contains($request->transcript_type, ['Student Copy']);
+        $isEcopy       = Str::contains(Str::lower($request->transcript_type), ['e-copy', 'soft copy']);
+        $isStudentCopy = Str::contains(Str::lower($request->transcript_type), ['student copy']);
 
         // Set up validation rules BEFORE validation
         $validationRules = [
@@ -608,6 +608,7 @@ class DashboardController extends Controller
             $endYear   = intval($matches[2]);
 
             $biodata = StudentRecord::where('matric', $matric)->first();
+            $biodataN = TransDetailsNew::where('matric', $matric)->first();
             if (! $biodata) {
                 Log::error('No StudentRecord found for matric: ' . $matric);
             }
@@ -616,12 +617,16 @@ class DashboardController extends Controller
             $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
             Log::info('biodata: ' . $biodata);
             $gender = $biodata->sex ?? 'N/A';
+            $thesisTitle = $biodataN->thesis_title ?? 'Not Specified';
+            $dateAward = $biodataN->dateAward ?? 'Not Specified';
 
             $results = Result2023::with('course') // Eager load the 'course' relationship
                 ->with(['faculty', 'department'])
                 ->select('*') // Select all columns
                 ->where('matric', $matric)
                 ->where('yr_of_entry', $normalizedSecAdmin)
+                ->where('session_of_grad', '!=', null)
+                ->where('resulttype', '!=', null)
                 ->get()
                 ->makeHidden(['status']); // Hide the 'status' column
 
@@ -678,7 +683,7 @@ class DashboardController extends Controller
 // Then use the correct comparison
                     if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
                         Log::info('Rendering higher degree transcript view');
-                        return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender'));
+                        return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward'));
                     }
 
                     Log::info('Rendering old transcript view');
@@ -687,7 +692,7 @@ class DashboardController extends Controller
 
                 if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
                     Log::info('Rendering higher degree transcript view');
-                    return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender'));
+                    return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward'));
                 }
 
                 Log::info('Rendering 2018 transcript view');
@@ -696,7 +701,7 @@ class DashboardController extends Controller
 
             if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
                 Log::info('Rendering higher degree transcript view');
-                return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender'));
+                return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward'));
             }
             Log::info('Rendering 2023 transcript view');
             return view('admin.transcript', compact('biodata', 'results', 'gender', 'degreeAwarded', 'cgpa'));
@@ -920,6 +925,8 @@ class DashboardController extends Controller
                 ->select('*') // Select all columns
                 ->where('matric', $matric)
                 ->where('yr_of_entry', $normalizedSecAdmin)
+                ->where('session_of_grad', '!=', null)
+                ->where('resulttype', '!=', null)
                 ->get()
                 ->makeHidden(['status']); // Hide the 'status' column
 
@@ -974,7 +981,7 @@ class DashboardController extends Controller
             Log::info('Biodata: ' . $biodata);
             Log::info('result: ' . $results);
 
-            if ($biodata->degree == 'P.hd' || $biodata->degree == 'M.phil') {
+            if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
                 return view('admin.approvedHigherTranscript', compact('biodata', 'results', 'degreeAwarded', 'dateAward', 'cgpa', 'gender', 'courierAddress'));
 
             }
@@ -1043,6 +1050,51 @@ class DashboardController extends Controller
                     'programme' => $request->degreeAward,
                     'dateAward' => $request->awardDate,
                     'status'    => 7,
+                ]);
+
+            if ($affectedRows === 0) {
+                return back()->with('error', 'No transcript records found to update.');
+            }
+
+            Log::info("Updated {$affectedRows} transcript record(s)");
+
+            return redirect()->route('admin.dashboard.to')->with('success', "Successfully updated {$affectedRows} transcript record(s) for approval.");
+        } catch (\Exception $e) {
+            Log::error('Error submitting transcript: ' . $e->getMessage());
+            return back()->with('error', 'An error occurred while submitting the transcript. Please try again.');
+        }
+    }
+
+    public function submitForApprovalHigher(Request $request)
+    {
+        try {
+            Log::info('Request Method: ' . $request->method());
+            Log::info('Request Data:', $request->all());
+
+            // Validate input
+            $request->validate([
+                'matric'      => 'required',
+                'invoiceNo'   => 'required',
+                'secAdmin'    => 'required',
+                'cgpa'        => 'numeric|min:0',
+                'degreeAward' => 'required|string|max:255',
+                'awardDate'   => 'required|string|max:255',
+                'thesisTitle' => 'required|string|max:255',
+            ]);
+
+            // Normalize session admin value
+            $normalizedSecAdmin = preg_replace('/\/(\d{2})$/', '/20$1', $request->secAdmin);
+
+            // Update all matching transcript records
+            $affectedRows = TransDetailsNew::where('email', $request->invoiceNo)
+                ->where('matric', $request->matric)
+                ->where('sessionadmin', $normalizedSecAdmin)
+                ->update([
+                    'award'        => $request->cgpa,
+                    'programme'    => $request->degreeAward,
+                    'dateAward'    => $request->awardDate,
+                    'thesis_title' => $request->thesisTitle,
+                    'status'       => 7,
                 ]);
 
             if ($affectedRows === 0) {
@@ -1353,6 +1405,8 @@ class DashboardController extends Controller
                 ->select('*')
                 ->where('matric', $matric)
                 ->where('yr_of_entry', $normalizedSecAdmin)
+                ->where('session_of_grad', '!=', null)
+                ->where('resulttype', '!=', null)
                 ->get()
                 ->makeHidden(['status']);
 
