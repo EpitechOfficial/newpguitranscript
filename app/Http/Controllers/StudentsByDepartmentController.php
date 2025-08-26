@@ -69,14 +69,28 @@ class StudentsByDepartmentController extends Controller
             }
 
             // Fetch students from Result2023 (existing logic)
+            // Filter to only include students whose approval field year is current year
             $query2023 = Result2023::where('dept', $departmentId)
                 ->where('status', 1)
                 ->where('session_of_grad','!=' , null)
-                ->where('resulttype','!=' , null);
+                ->where('resulttype','!=' , null)
+                ->whereRaw('YEAR(approval) = ?', [date('Y')]);
 
             // Log the SQL query for debugging
             Log::info('SQL Query 2023: ' . $query2023->toSql());
             Log::info('Query Bindings 2023: ' . json_encode($query2023->getBindings()));
+            
+            // Log current year for approval filtering
+            Log::info('Filtering Result2023 for approval year: ' . date('Y'));
+            
+            // Check if there are Result2023 records with current year approval dates
+            $currentYearApprovalCount = Result2023::where('dept', $departmentId)
+                ->where('status', 1)
+                ->where('session_of_grad','!=' , null)
+                ->where('resulttype','!=' , null)
+                ->whereRaw('YEAR(approval) = ?', [date('Y')])
+                ->count();
+            Log::info("Found $currentYearApprovalCount Result2023 records with current year approval dates");
 
             $students2023 = $query2023
                 ->with(['department', 'studentRecord'])
@@ -119,13 +133,27 @@ class StudentsByDepartmentController extends Controller
                 });
 
             // Fetch students from Result2018 using department text
+            // Filter to only include students whose approval date in notify.student_record is current year
+            // student_record format: "Ph.D,2024-11-22,2025-02-11" (last date is approval date)
             $query2018 = DB::table('results')
                 ->join('notify', 'results.stud_id', '=', 'notify.matric')
-                ->where('results.dept', $department->department)
-                ->orWhere('results.dept', $department->name ?? $department->department);
+                ->where(function($query) use ($department) {
+                    $query->where('results.dept', $department->department)
+                          ->orWhere('results.dept', $department->name ?? $department->department);
+                })
+                ->whereRaw('YEAR(SUBSTRING_INDEX(notify.student_record, ",", -1)) = ?', [date('Y')]);
 
             Log::info('SQL Query 2018: ' . $query2018->toSql());
             Log::info('Query Bindings 2018: ' . json_encode($query2018->getBindings()));
+            
+            // Log approval date filtering for 2018
+            Log::info('Filtering Result2018 for approval date year: ' . date('Y'));
+            
+            // Check if there are Result2018 records with current year approval dates in notify table
+            $currentYearNotifyCount = DB::table('notify')
+                ->whereRaw('YEAR(SUBSTRING_INDEX(student_record, ",", -1)) = ?', [date('Y')])
+                ->count();
+            Log::info("Found $currentYearNotifyCount notify records with current year approval dates");
 
             // Debug: Let's see what we get from the basic join first
             $debugQuery = DB::table('results')
@@ -162,6 +190,14 @@ class StudentsByDepartmentController extends Controller
                 ->get();
             
             Log::info('Debug - Notify table sample: ' . json_encode($debugNotify));
+            
+            // Debug: Show approval dates from notify table
+            $debugApprovalDates = DB::table('notify')
+                ->select('matric', 'student_record', DB::raw('SUBSTRING_INDEX(student_record, ",", -1) as approval_date'))
+                ->limit(10)
+                ->get();
+            
+            Log::info('Debug - Approval dates from notify table: ' . json_encode($debugApprovalDates));
 
             $students2018 = $query2018
                 ->select('results.stud_id as matric', 'results.dept', 'results.sec2 as session', 'results.effectivedate')
@@ -201,8 +237,8 @@ class StudentsByDepartmentController extends Controller
             // Sort by matric number
             $sortedStudents = $allStudents->sortBy('matric')->values();
 
-            Log::info('Found ' . $students2023->count() . ' students from 2023');
-            Log::info('Found ' . $students2018->count() . ' students from 2018');
+            Log::info('Found ' . $students2023->count() . ' students from 2023 (after approval year filtering)');
+            Log::info('Found ' . $students2018->count() . ' students from 2018 (after approval date filtering)');
             Log::info('Total unique students: ' . $sortedStudents->count());
 
             return response()->json([
@@ -671,5 +707,34 @@ class StudentsByDepartmentController extends Controller
         }
 
         return 0; // fallback
+    }
+
+    /**
+     * Check if student's approval date is in current year
+     * student_record format: "Ph.D,2024-11-22,2025-02-11" (last date is approval date)
+     */
+    private function isApprovalDateCurrentYear($studentRecord)
+    {
+        if (empty($studentRecord)) {
+            return false;
+        }
+
+        $parts = explode(',', $studentRecord);
+        if (count($parts) < 3) {
+            return false;
+        }
+
+        $approvalDate = trim(end($parts));
+        if (empty($approvalDate)) {
+            return false;
+        }
+
+        try {
+            $date = \Carbon\Carbon::parse($approvalDate);
+            return $date->year === (int) date('Y');
+        } catch (\Exception $e) {
+            Log::warning("Invalid approval date format: $approvalDate");
+            return false;
+        }
     }
 }
