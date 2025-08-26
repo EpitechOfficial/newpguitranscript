@@ -12,7 +12,7 @@ class Result2018 extends Model
 
     public function biodata()
     {
-        return $this->belongsTo(Biodata::class, 'matric', 'matric');
+        return $this->belongsTo(Biodata::class, 'stud_id', 'matric');
     }
 
     public function course()

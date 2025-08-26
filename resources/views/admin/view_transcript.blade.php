@@ -224,7 +224,6 @@
                     <div class="afterHead afterHead2">
 
 
-
                         <p class="bb text-center"><strong>PERMANENT POSTGRADUATE STUDENT'S ACADEMIC RECORD AND
                                 TRANSCRIPT</strong> </p>
 
@@ -232,7 +231,7 @@
 
                         <div class="info-container">
                             <strong>Name (Surname Last):</strong>
-                            <span>{{ $biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : $biodata->name }}</span>
+                            <span>{{ $biodata->name ?? ($biodata->Othernames && $biodata->Surname ? $biodata->Othernames . ' ' . $biodata->Surname : 'N/A') }}</span>
 
                             <strong>Gender:</strong>
                             <span> {{ $gender }}</span>
@@ -241,10 +240,10 @@
                             <span>{{ $biodata->matric }}</span>
 
                             <strong>Session Admitted:</strong>
-                            <span>{{ $biodata->sessionadmin ?? $results->first()->yr_of_entry }}</span>
+                            <span>{{ $biodata->sessionadmin ?? $biodata->yr_of_entry ?? $results->first()->yr_of_entry ?? 'N/A' }}</span>
 
                             <strong>Department:</strong>
-                            <span>{{ $biodata->department ?? ($results->first()->department->department ?? 'N/A') }}</span>
+                            <span>{{ $biodata->dept ?? $biodata->department ?? ($results->first()->department->department ?? 'N/A') }}</span>
 
                             <strong>Faculty:</strong>
                             <span>{{ $biodata->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}</span>
@@ -277,14 +276,14 @@
                                                 {{ optional($result->course)->course_code ?? (optional($result->course)->course ?? 'N/A') }}
                                             </td>
                                             <td class="">
-                                                {{ $result->course->title ?? ($result->course->course_title ?? 'N/A') }}
+                                                {{ optional($result->course)->title ?? (optional($result->course)->course_title ?? 'N/A') }}
                                             </td>
                                             <td class="text-center">
-                                                {{ $result->course->unit ?? ($result->cunit ?? 'N/A') }}
+                                                {{ optional($result->course)->unit ?? ($result->cunit ?? $result->c_unit ?? 'N/A') }}
                                             </td>
 
                                             <td class="text-center">
-                                                {{ $result->status ?? ($result->cstatus ?? 'N/A') }}
+                                                {{ $result->cstatus ?? $result->status ?? 'N/A' }}
                                             </td>
                                             <td class="text-center">{{ $result->score }}</td>
                                         </tr>
@@ -305,15 +304,14 @@
                                 </div>
                                 <div>
                                     <p class="text-center bold"><strong>Date of Award:
-                                        </strong>{{ $dateAward ?? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') }}</strong>
-                                    </p>
+                                        </strong>{{ $dateAward ?? (isset($results->first()->effectivedate) ? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') : 'N/A') }}</strong> </p>
                                 </div>
 
 
 
                             </div>
                             <p><strong>Area of Specialization:</strong>
-                                {{ $biodata->feildofinterest ?? ($results->first()->specialization->field_title ?? 'N/A') }}
+                                {{ $biodata->specialization ?? (isset($biodata->feildofinterest) ? $biodata->feildofinterest : null) ?? (isset($results->first()->specialization) ? $results->first()->specialization->field_title : 'N/A') }}
                             </p>
 
                             <hr>
