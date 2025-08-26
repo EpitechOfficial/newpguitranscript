@@ -243,7 +243,7 @@
                             <span>{{ $biodata->sessionadmin ?? $biodata->yr_of_entry ?? $results->first()->yr_of_entry ?? 'N/A' }}</span>
 
                             <strong>Department:</strong>
-                            <span>{{ $biodata->dept ?? $biodata->department ?? ($results->first()->department->department ?? 'N/A') }}</span>
+                            <span>{{ ($results->first()->department->department) ?? $biodata->dept ?? $biodata->department ?? 'N/A' }}</span>
 
                             <strong>Faculty:</strong>
                             <span>{{ $biodata->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}</span>
