@@ -31,14 +31,13 @@ class StudentsByDepartmentController extends Controller
     {
         try {
             // Get departments from DeptNew that have students in Result2023
-            $departments = DeptNew::whereIn('id', function ($query) {
-                $query->select('dept')
-                    ->from('testscore')
-                    ->where('status', 1)
-                    ->distinct();
+            $departments = DeptNew::orderBy('department', 'asc')
+            ->get()
+            ->mapWithKeys(function ($dept) {
+                return [$dept->id => $dept->department];
             })
-                ->orderBy('department', 'asc')
-                ->pluck('department', 'id');
+            ->sort()
+            ->all();
 
             return response()->json(['departments' => $departments]);
         } catch (\Exception $e) {
@@ -482,16 +481,28 @@ class StudentsByDepartmentController extends Controller
                 }
             } elseif ($dataSource === '2018' && isset($student->degree)) {
                 // Try to determine program from degree in biodata
-                $degree = strtolower(trim($student->degree));
-                if (strpos($degree, 'phd') !== false || strpos($degree, 'doctor') !== false) {
-                    $program = 'Academics';
-                } elseif (strpos($degree, 'm.phil') !== false || strpos($degree, 'master') !== false) {
-                    $program = 'Academics';
-                } elseif (strpos($degree, 'pgd') !== false || strpos($degree, 'diploma') !== false) {
-                    $program = 'PGD';
-                } else {
-                    $program = 'Academics'; // Default fallback
+                $degreeId = $student->degree_id;
+                 if (!$degreeId && $student->degree) {
+                    $degreeLookup = DB::table('degree_new')->where('degree', $student->degree)->first();
+                    $degreeId = $degreeLookup->id ?? null;
+                    Log::info("Looked up degree_id for '{$student->degree}': " . ($degreeId ?? 'NOT_FOUND'));
                 }
+                $programCgpa = DB::table('programme_cgpa')
+                    ->where('degree_id', $degreeId ?? null)
+                    ->first();
+                if ($programCgpa) {
+                    $program = $programCgpa->type;
+                }
+                // $degree = strtolower(trim($student->degree));
+                // if (strpos($degree, 'phd') !== false || strpos($degree, 'doctor') !== false) {
+                //     $program = 'Academics';
+                // } elseif (strpos($degree, 'm.phil') !== false || strpos($degree, 'master') !== false) {
+                //     $program = 'Academics';
+                // } elseif (strpos($degree, 'pgd') !== false || strpos($degree, 'diploma') !== false) {
+                //     $program = 'PGD';
+                // } else {
+                //     $program = 'Academics'; // Default fallback
+                // }
                 
                 Log::info("Program determined from biodata degree for 2018 student: $matric, degree: {$student->degree}, program: $program");
             }

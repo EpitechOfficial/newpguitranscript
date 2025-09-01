@@ -164,10 +164,16 @@
             .then(data => {
                 const select = document.getElementById('departmentSelect');
                 if (data.departments) {
-                    Object.entries(data.departments).forEach(([id, name]) => {
-                        select.innerHTML += `<option value="${id}">${name}</option>`;
-                    });
-                }
+            // Clear existing options except the first one
+            select.innerHTML = '<option value="">Select Department</option>';
+            
+            // Sort departments by name
+            Object.entries(data.departments)
+                .sort((a, b) => a[1].localeCompare(b[1]))
+                .forEach(([id, name]) => {
+                    select.innerHTML += `<option value="${id}">${name}</option>`;
+                });
+        }
                 checkFormValidity();
             })
             .catch(() => {
