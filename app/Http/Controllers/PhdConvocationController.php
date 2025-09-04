@@ -25,18 +25,17 @@ class PhdConvocationController extends Controller
 
         $matric = trim($request->input('matric'));
 
-        // Get user_id from prev_app by matric
+        // Get user_id from prev_app by matric (fac/dept/degree not present here per schema)
         $prev = PrevApp::where('matric', $matric)
-            ->select('user_id', 'fac as fac_id', 'dept as dept_id', 'degree as degree_id')
+            ->select('user_id', 'matric')
             ->first();
 
         if (! $prev) {
             return back()->with('error', 'Matric not found in prev_app');
         }
 
-        // Ensure this user_id exists in thesis_examiner
-        $examiner = ThesisExaminer::where('user_id', $prev->user_id)
-            ->orWhere('candidate_id', $matric)
+        // Ensure this user_id exists in thesis_examiner as candidate_id
+        $examiner = ThesisExaminer::where('candidate_id', $prev->user_id)
             ->first();
 
         if (! $examiner) {
@@ -50,8 +49,8 @@ class PhdConvocationController extends Controller
             'Surname'     => null,
             'sex'         => null,
             'sessionadmin'=> null,
-            'faculty'     => $examiner->faculty ?? $prev->fac_id,
-            'department'  => $examiner->department_id ?? $prev->dept_id,
+            'faculty'     => $examiner->faculty ?? null,
+            'department'  => $examiner->department_id ?? null,
             'degree'      => 'Ph.D',
             'email'       => null,
         ];
@@ -81,10 +80,10 @@ class PhdConvocationController extends Controller
         // Render the higher transcript edit page to capture award, degree awarded, thesis title, etc.
         $gender      = $student->sex ?? 'N/A';
         $results     = $results2023->isNotEmpty() ? $results2023 : $results2018;
-        $degreeAwarded = null;
+        $degreeAwarded = $examiner->degree_awarded ?? null;
         $cgpa = null;
         $thesisTitle = null;
-        $dateAward = null;
+        $dateAward = $examiner->award_year ?? null;
 
         return view('admin.transcriptHigherPhD', compact('student', 'results', 'gender', 'degreeAwarded', 'cgpa', 'thesisTitle', 'dateAward'));
     }
@@ -97,14 +96,23 @@ class PhdConvocationController extends Controller
             'othernames'   => 'nullable|string|max:255',
             'sex'          => 'nullable|string|max:10',
             'sessionadmin' => 'required|string|max:20',
-            'faculty'      => 'required|string|max:50',
-            'department'   => 'required|string|max:50',
+            'faculty'      => 'nullable|string|max:50',
+            'department'   => 'nullable|string|max:50',
             'degree_awarded' => 'required|string|max:255',
             'award_date'   => 'required|string|max:255',
             'thesis_title' => 'required|string|max:255',
         ]);
 
         $normalizedSecAdmin = preg_replace('/\/(\d{2})$/', '/20$1', $request->sessionadmin);
+
+        // Resolve faculty/department/programme from thesis_examiner if missing
+        $prev = PrevApp::where('matric', $request->matric)->select('user_id')->first();
+        $examiner = $prev ? ThesisExaminer::where('candidate_id', $prev->user_id)->first() : null;
+        $resolvedFaculty    = $request->faculty ?? ($examiner->faculty ?? null);
+        $resolvedDepartment = $request->department ?? ($examiner->department_id ?? null);
+        $resolvedProgramme  = $request->degree_awarded ?? ($examiner->degree_awarded ?? null);
+        $resolvedArea       = $examiner->area_of_specialization ?? null;
+        $resolvedAwardDate  = $request->award_date ?? ($examiner->award_year ?? null);
 
         // Create new trans_details_new record
         $trans = TransDetailsNew::create([
@@ -113,13 +121,14 @@ class PhdConvocationController extends Controller
             'Othernames'    => $request->othernames,
             'sex'           => $request->sex,
             'sessionadmin'  => $normalizedSecAdmin,
-            'faculty'       => $request->faculty,
-            'department'    => $request->department,
+            'faculty'       => $resolvedFaculty,
+            'department'    => $resolvedDepartment,
             'degree'        => 'Ph.D',
             'award'         => null, // CGPA/WA to be computed elsewhere if needed
-            'programme'     => $request->degree_awarded,
-            'dateAward'     => $request->award_date,
+            'programme'     => $resolvedProgramme,
+            'dateAward'     => $resolvedAwardDate,
             'thesis_title'  => $request->thesis_title,
+            'feildofinterest'=> $resolvedArea,
             'date_requested'=> now(),
             'status'        => 7,
         ]);
