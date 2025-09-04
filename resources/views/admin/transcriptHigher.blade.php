@@ -232,7 +232,9 @@
                                     <strong><label class="font-semibold block">Date of Award:</label></strong>
 
                                     <input type="text" name="awardDate"
-                                        value="{{ optional($dateAward) ? \Carbon\Carbon::parse($dateAward)->format('d F, Y') : 'N/A' }}"
+                                        value="{{ $dateAward && \Carbon\Carbon::canBeCreatedFromFormat($dateAward, 'Y-m-d')
+                                            ? \Carbon\Carbon::parse($dateAward)->format('d F, Y')
+                                            : $dateAward }}"
                                         class="border p-1 px-2 w-full rounded-md">
 
                                 </div>
