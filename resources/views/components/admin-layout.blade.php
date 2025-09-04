@@ -216,6 +216,12 @@
                                 <span class="label">2025 Convocation</span>
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('admin.phd_convocation.form') }}" data-href="#">
+                                <i data-acorn-icon="book-open" class="icon" data-acorn-size="18"></i>
+                                <span class="label">2025 Ph.D Convocation</span>
+                            </a>
+                        </li>
                         @endif
 
                      

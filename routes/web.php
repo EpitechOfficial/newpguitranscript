@@ -150,6 +150,11 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
     Route::post('/transcript/submit', [DashboardController::class, 'submitForApproval'])->name('transcriptSubmit');
     Route::post('/transcript/submit-higher', [DashboardController::class, 'submitForApprovalHigher'])->name('transcriptSubmitHigher');
 
+    // 2025 Ph.D Convocation
+    Route::get('/phd-convocation', [\App\Http\Controllers\PhdConvocationController::class, 'form'])->name('phd_convocation.form');
+    Route::post('/phd-convocation/find', [\App\Http\Controllers\PhdConvocationController::class, 'find'])->name('phd_convocation.find');
+    Route::post('/phd-convocation/submit', [\App\Http\Controllers\PhdConvocationController::class, 'submit'])->name('phd_convocation.submit');
+
     // Transcript editing routes
     Route::get('/edit-transcript-realtime', [ResultOldController::class, 'editTranscriptRealtimePage'])->name('edit_transcript_realtime');
     Route::get('/edit-transcript-realtime/fetch', [ResultOldController::class, 'fetchTranscriptRealtime'])->name('edit_transcript_realtime.fetch');
