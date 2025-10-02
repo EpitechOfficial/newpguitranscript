@@ -73,7 +73,11 @@ class StudentsByDepartmentController extends Controller
                 ->where('status', 1)
                 ->where('session_of_grad','!=' , null)
                 ->where('resulttype','!=' , null)
-                ->whereRaw('YEAR(approval) = ?', [date('Y')]);
+                ->whereHas('notify');
+
+            //     ->whereHas('notify', function ($query) {
+            //     $query->whereRaw('YEAR(date) = ?', [date('Y')]);
+            // });
 
             // Log the SQL query for debugging
             Log::info('SQL Query 2023: ' . $query2023->toSql());
@@ -92,7 +96,7 @@ class StudentsByDepartmentController extends Controller
             Log::info("Found $currentYearApprovalCount Result2023 records with current year approval dates");
 
             $students2023 = $query2023
-                ->with(['department', 'studentRecord'])
+                ->with(['department', 'studentRecord', 'notify'])
                 ->select('matric', 'dept', 'yr_of_entry as session')
                 ->orderBy('matric')
                 ->distinct()
@@ -140,7 +144,7 @@ class StudentsByDepartmentController extends Controller
                     $query->where('results.dept', $department->department)
                           ->orWhere('results.dept', $department->name ?? $department->department);
                 })
-                ->whereRaw('YEAR(SUBSTRING_INDEX(notify.student_record, ",", -1)) = ?', [date('Y')]);
+                ->whereRaw('YEAR(notify.date) = ?', [date('Y')]);
 
             Log::info('SQL Query 2018: ' . $query2018->toSql());
             Log::info('Query Bindings 2018: ' . json_encode($query2018->getBindings()));
@@ -328,10 +332,15 @@ class StudentsByDepartmentController extends Controller
             // Try Result2023 first
             $results2023 = Result2023::where('matric', $matric)
                 ->where('yr_of_entry', $sessionAdmin)
-                ->where('session_of_grad','!=' , null)
-                ->where('resulttype','!=' , null)
+                ->whereNotNull('session_of_grad')
+                ->whereNotNull('resulttype')
+                ->join('course_new', 'testscore.cozid', '=', 'course_new.id')
+                ->whereColumn('testscore.field', 'course_new.specialization')
+                ->select('testscore.*')
                 ->with(['course', 'department', 'faculty'])
-                ->get();
+                ->get()
+                ->sortByDesc('exam_sec')
+                ->unique(['cozid']);
 
             Log::info("Result2023 query for matric: $matric, session: $sessionAdmin, count: " . $results2023->count());
 

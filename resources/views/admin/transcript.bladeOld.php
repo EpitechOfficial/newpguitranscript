@@ -111,6 +111,56 @@
             display: flex !important;
             justify-content: center !important;
         }
+
+        .address-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+        }
+
+        .address-field {
+            margin-bottom: 1rem;
+        }
+
+        .address-field label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .address-field textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 0.375rem;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .courier-item {
+            background-color: #fff;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 0.375rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .courier-item label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+
+        .courier-item textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            min-height: 70px;
+            resize: vertical;
+        }
     </style>
 
     <div class="container">
@@ -183,128 +233,104 @@
 
                 <hr>
 
-                @if ($results->isNotEmpty())
+                <!-- Academic Results -->
+                <div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-300">
+                            <thead>
+                                <tr class="bg-dark">
+                                    <th class="border p-2">Course Code</th>
+                                    <th class="border p-2">Course Title</th>
+                                    <th class="border p-2">Units</th>
+                                    <th class="border p-2">Status</th>
+                                    <th class="border p-2">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($results as $result)
+                                    <tr class="border">
+                                        <td class="border p-2">{{ $result->course->course_code ?? ($result->code ?? 'N/A') }}</td>
+                                        <td class="border p-2">{{ $result->course->course_title ?? 'N/A' }}</td>
+                                        <td class="border p-2">{{ $result->c_unit ?? ($result->cunit ?? 'N/A') }}</td>
 
-                    <!-- Academic Results -->
-                    <div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full border-collapse border border-gray-300">
-                                <thead>
-                                    <tr class="bg-dark">
-                                        <th class="border p-2">Course Code</th>
-                                        <th class="border p-2">Course Title</th>
-                                        <th class="border p-2">Units</th>
-                                        <th class="border p-2">Status</th>
-                                        <th class="border p-2">Score</th>
+                                        <td class="border p-2">{{ $result->status ?? ($result->cstatus ?? 'N/A') }}
+                                        </td>
+                                        <td class="border p-2">{{ $result->score }}</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($results as $result)
-                                        <tr class="border">
-                                            <td class="border p-2">
-                                                {{ $result->course->course_code ?? ($result->code ?? 'N/A') }}</td>
-                                            <td class="border p-2">{{ $result->course->course_title ?? 'N/A' }}</td>
-                                            <td class="border p-2">{{ $result->c_unit ?? ($result->cunit ?? 'N/A') }}
-                                            </td>
-
-                                            <td class="border p-2">{{ $result->status ?? ($result->cstatus ?? 'N/A') }}
-                                            </td>
-                                            <td class="border p-2">{{ $result->score }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                            <hr>
-
-                            <div class="test">
-                                <div>
-                                    <label class="font-semibold block">Degree Awarded:</label>
-                                    <input type="text" name="degreeAward"
-                                        value="{{ $degreeAwarded ?? (in_array($biodata->degree, ['Ph.D', 'P.hd']) ?? ('Doctor of Philosophy' ?? (in_array($biodata->degree, ['M.Phil', 'M.phil']) ?? ('Doctor of Philosophy' ?? 'Not Specified')))) }}"
-                                        class="border  p-1 px-2 w-full rounded-md">
-                                </div>
-                                <div>
-                                    <label class="font-semibold block">CGPA:</label>
-                                    <input type="number" name="cgpa" value="{{ $cgpa ?? '0' }}"
-                                        class="border  p-1 px-2 w-full rounded-md">
-                                </div>
-                                <div>
-                                    <strong><label class="font-semibold block">Date of Award:</label></strong>
-
-                                    <input type="text" name="awardDate"
-                                        value="{{ $dateAward && \Carbon\Carbon::canBeCreatedFromFormat($dateAward, 'Y-m-d')
-                                            ? \Carbon\Carbon::parse($dateAward)->format('d F, Y')
-                                            : $dateAward }}"
-                                        class="border p-1 px-2 w-full rounded-md">
-
-                                </div>
-
-
+                                @endforeach
+                            </tbody>
+                        </table>
+                        <hr>
+                        <p class="text-center bold"><strong>Cumulative Grade Point Average (CGPA / WA) Score for the Degree
+                                of Master is</strong> <input type="number" name="cgpa" value="{{$cgpa ?? 'N/A'}}"
+                                class="border  p-1 px-2 w-full rounded-md"></p>
+                        <div class="test">
+                            <div>
+                                <label class="font-semibold block">Degree Awarded:</label>
+                                <input type="text" name="degreeAward" value="{{ $degreeAwarded ?? 'Not Specified' }}"
+                                    class="border  p-1 px-2 w-full rounded-md">
                             </div>
-                            <strong>
-                                <p class="bold" style="text-align:center; margin-bottom:0">Thesis Title:</p>
-                            </strong>
-                            <div style="display: flex; justify-content: center;">
+                            <div>
+                                <label class="font-semibold block">Date of Award:</label>
 
-                                <textarea name="thesisTitle" placeholder="Enter Thesis Title" class="border p-1 px-2 w-full rounded-md" cols="50">
-                        {{ $thesisTitle }}
-                        </textarea>
-
+                                <input type="text" name="awardDate"
+                                    value="{{ optional($results->first())->effectivedate ? \Carbon\Carbon::parse($results->first()->effectivedate)->format('d F, Y') : 'N/A' }}"
+                                    class="border p-1 px-2 w-full rounded-md">
 
                             </div>
 
-                        </div>
-                    </div>
-                @else
-                    <div class="test">
-                        <div>
-                            <strong><label class="font-semibold block">Degree Awarded:</label></strong>
-                            <input type="text" name="degreeAward"
-                                value="{{ in_array(strtoupper($biodata->degree ?? ''), ['PH.D', 'PHD']) ? 'Doctor of Philosophy' : (in_array(strtoupper($biodata->degree ?? ''), ['M.PHIL']) ? 'Master of Philosophy' : 'Not Specified') }}"
-                                class="border p-1 px-2 w-full rounded-md">
-                        </div>
-                        <div>
-
-                            <input type="hidden" name="cgpa" value="{{ $biodata->award ?? '0' }}">
-                        </div>
-                        <div>
-                            <strong><label class="font-semibold block">Date of Award:</label></strong>
-
-                            <input type="text" name="awardDate"
-                                value="{{ $dateAward && \Carbon\Carbon::canBeCreatedFromFormat($dateAward, 'Y-m-d')
-                                    ? \Carbon\Carbon::parse($dateAward)->format('d F, Y')
-                                    : 'Not Specified' }}"
-                                class="border p-1 px-2 w-full rounded-md">
 
                         </div>
-
+                        <p><strong>Area of Specialization:</strong>
+                            {{ $biodata->feildofinterest ?? ($results->first()->specialization->field_title ?? 'N/A') }}
+                        </p>
 
                     </div>
+                </div>
 
-                    <strong>
-                        <p class="bold" style="text-align:center; margin-bottom:0">Thesis Title:</p>
-                    </strong>
-                    <div style="display: flex; justify-content: center;">
+                <!-- Address Section -->
 
-                        <textarea name="thesisTitle" placeholder="Enter Thesis Title" class="border p-1 px-2 w-full rounded-md" cols="50">
-                        {{ $thesisTitle }}
-                        </textarea>
+              <div class="address-section">
+                    <h3 class="text-lg font-semibold mb-3">Delivery Addresses</h3>
 
-
+                    <div class="address-field">
+                        <label for="ecopyAddress">E-Copy Address:</label>
+                        <textarea
+                            id="ecopyAddress"
+                            name="ecopyAddress"
+                            placeholder="Enter e-copy delivery address">{{ $biodata->ecopy_address ?? '' }}</textarea>
                     </div>
 
+                    @if ($biodata && $biodata->couriers && $biodata->couriers->count() > 0)
+                        <div class="mt-3">
+                            <h4 class="font-semibold mb-2">Courier Addresses:</h4>
+                            @foreach ($biodata->couriers as $index => $courier)
+                                <div class="courier-item">
+                                    <label for="courierAddress{{ $index }}">
+                                        Courier Address {{ $index + 1 }}
+                                        @if($courier->name)
+                                            ({{ $courier->name }})
+                                        @endif
+                                    </label>
+                                    <textarea
+                                        id="courierAddress{{ $index }}"
+                                        name="courierAddresses[{{ $courier->id }}]"
+                                        class="courier-address-field"
+                                        data-courier-id="{{ $courier->id }}"
+                                        placeholder="Enter courier delivery address">{{ $courier->address ?? '' }}</textarea>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
 
 
-
-                @endif
-
-
-                <form action="{{ route('admin.transcriptSubmitHigher') }}" method="POST"
-                    onsubmit="return validateForm()">
+                <form action="{{ route('admin.transcriptSubmit') }}" method="POST" onsubmit="return validateForm()">
                     @csrf
                     @if ($biodata)
                         <input type="hidden" name="matric" value="{{ $biodata->matric }}">
-                        <input type="hidden" name="invoiceNo" value="{{ $biodata->invoiceno }}">
+                        <input type="hidden" name="invoiceNo" value="{{ $biodata->invoiceno}}">
+
                     @endif
 
                     <input type="hidden" name="secAdmin"
@@ -313,7 +339,8 @@
                     <input type="hidden" name="cgpa" id="cgpaInput">
                     <input type="hidden" name="degreeAward" id="degreeAwardInput">
                     <input type="hidden" name="awardDate" id="awardDateInput">
-                    <input type="hidden" name="thesisTitle" id="thesisTitleInput">
+                    <input type="hidden" name="ecopyAddress" id="ecopyAddressInput">
+                    <div id="courierAddressesContainer"></div>
 
 
                     <div class="btn-approve mt-4">
@@ -328,11 +355,10 @@
                         let cgpa = document.querySelector("input[name='cgpa']").value.trim();
                         let degreeAward = document.querySelector("input[name='degreeAward']").value.trim();
                         let awardDate = document.querySelector("input[name='awardDate']").value.trim();
-                        let thesisTitle = document.querySelector("textarea[name='thesisTitle']").value.trim();
 
                         let submitButton = document.querySelector('.btn-approve button');
-                        if (thesisTitle === "" || degreeAward === "" || awardDate === "") {
-                            alert("Please fill all required fields before submitting.");
+                        if (cgpa === "" || degreeAward === "" || awardDate === "") {
+                            alert("Please fill in both CGPA and Degree Award fields before submitting.");
                             return false;
                         }
 
@@ -342,9 +368,28 @@
                             `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Submitting...`;
 
                         document.getElementById("cgpaInput").value = cgpa;
-                        document.getElementById("thesisTitleInput").value = thesisTitle;
                         document.getElementById("degreeAwardInput").value = degreeAward;
                         document.getElementById("awardDateInput").value = awardDate;
+                        document.getElementById("ecopyAddressInput").value = document.getElementById("ecopyAddress").value.trim();
+
+                        // Collect all courier addresses
+                        const courierAddressFields = document.querySelectorAll('.courier-address-field, textarea[name^="courierAddresses"]');
+                        const container = document.getElementById('courierAddressesContainer');
+                        container.innerHTML = '';
+
+                        courierAddressFields.forEach((field) => {
+                            const courierId = field.dataset.courierId || field.name.match(/\[([^\]]+)\]/)?.[1];
+                            const address = field.value.trim();
+                            
+                            if (courierId) {
+                                const hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = `courierAddresses[${courierId}]`;
+                                hiddenInput.value = address;
+                                container.appendChild(hiddenInput);
+                            }
+                        });
+
 
                         return true;
                     }
@@ -354,9 +399,6 @@
                 <script>
                     document.querySelector("form").addEventListener("submit", function() {
                         document.getElementById("cgpaInput").value = document.querySelector("input[name='cgpa']").value;
-                        document.getElementById("thesisTitleInput").value = document.querySelector(
-                                "textarea[name='thesisTitle']")
-                            .value;
                         document.getElementById("degreeAwardInput").value = document.querySelector("input[name='degreeAward']")
                             .value;
                     });

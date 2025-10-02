@@ -111,6 +111,56 @@
             display: flex !important;
             justify-content: center !important;
         }
+
+        .address-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+        }
+
+        .address-field {
+            margin-bottom: 1rem;
+        }
+
+        .address-field label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .address-field textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 0.375rem;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .courier-item {
+            background-color: #fff;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 0.375rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .courier-item label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+
+        .courier-item textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            min-height: 70px;
+            resize: vertical;
+        }
     </style>
 
     <div class="container">
@@ -199,7 +249,8 @@
                             <tbody>
                                 @foreach ($results as $result)
                                     <tr class="border">
-                                        <td class="border p-2">{{ $result->course->course_code ?? ($result->code ?? 'N/A') }}</td>
+                                        <td class="border p-2">
+                                            {{ $result->course->course_code ?? ($result->code ?? 'N/A') }}</td>
                                         <td class="border p-2">{{ $result->course->course_title ?? 'N/A' }}</td>
                                         <td class="border p-2">{{ $result->c_unit ?? ($result->cunit ?? 'N/A') }}</td>
 
@@ -211,13 +262,15 @@
                             </tbody>
                         </table>
                         <hr>
-                        <p class="text-center bold"><strong>Cumulative Grade Point Average (CGPA / WA) Score for the Degree
-                                of Master is</strong> <input type="number" name="cgpa" value="{{$cgpa ?? 'N/A'}}"
+                        <p class="text-center bold"><strong>Cumulative Grade Point Average (CGPA / WA) Score for the
+                                Degree
+                                of Master is</strong> <input type="number" name="cgpa" value="{{ $cgpa ?? 'N/A' }}"
                                 class="border  p-1 px-2 w-full rounded-md"></p>
                         <div class="test">
                             <div>
                                 <label class="font-semibold block">Degree Awarded:</label>
-                                <input type="text" name="degreeAward" value="{{ $degreeAwarded ?? 'Not Specified' }}"
+                                <input type="text" name="degreeAward"
+                                    value="{{ $degreeAwarded ?? 'Not Specified' }}"
                                     class="border  p-1 px-2 w-full rounded-md">
                             </div>
                             <div>
@@ -238,13 +291,53 @@
                     </div>
                 </div>
 
+                <!-- Address Section -->
+
+                <div class="address-section">
+
+
+                    @if ($biodataEcopys && $biodataEcopys->count() > 0)
+                        <div class="mb-4">
+                            <h4 class="font-semibold mb-2">E-Copy Addresses:</h4>
+                            @foreach ($biodataEcopys as $index => $ecopyData)
+                                @if ($ecopyData->ecopy_address)
+                                    <div class="courier-item">
+                                        <label for="ecopyAddress{{ $index }}">
+                                            E-Copy Address {{ $index + 1 }}
+                                        </label>
+                                        <textarea id="ecopyAddress{{ $index }}" name="ecopyAddresses[{{ $ecopyData->id }}]" class="ecopy-address-field"
+                                            data-ecopy-id="{{ $ecopyData->id }}" placeholder="Enter e-copy delivery address">{{ $ecopyData->ecopy_address }}</textarea>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($biodata && $biodata->couriers && $biodata->couriers->count() > 0)
+                        <div class="mt-3">
+                            <h4 class="font-semibold mb-2">Courier Addresses:</h4>
+                            @foreach ($biodata->couriers as $index => $courier)
+                                <div class="courier-item">
+                                    <label for="courierAddress{{ $index }}">
+                                        Courier Address {{ $index + 1 }}
+                                        @if ($courier->name)
+                                            ({{ $courier->name }})
+                                        @endif
+                                    </label>
+                                    <textarea id="courierAddress{{ $index }}" name="courierAddresses[{{ $courier->id }}]"
+                                        class="courier-address-field" data-courier-id="{{ $courier->id }}" placeholder="Enter courier delivery address">{{ $courier->address ?? '' }}</textarea>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
 
                 <form action="{{ route('admin.transcriptSubmit') }}" method="POST" onsubmit="return validateForm()">
                     @csrf
                     @if ($biodata)
                         <input type="hidden" name="matric" value="{{ $biodata->matric }}">
-                        <input type="hidden" name="invoiceNo" value="{{ $biodata->email}}">
-
+                        <input type="hidden" name="invoiceNo" value="{{ $biodata->invoiceno }}">
                     @endif
 
                     <input type="hidden" name="secAdmin"
@@ -253,10 +346,11 @@
                     <input type="hidden" name="cgpa" id="cgpaInput">
                     <input type="hidden" name="degreeAward" id="degreeAwardInput">
                     <input type="hidden" name="awardDate" id="awardDateInput">
-
+                    <input type="hidden" name="ecopyAddress" id="ecopyAddressInput">
+                    <div id="addressesContainer"></div>
 
                     <div class="btn-approve mt-4">
-                        <button type="submit" class="btn-primary text-white px-4 py-2 rounded-md ">
+                        <button type="submit" class="btn-primary text-white px-4 py-2 rounded-md">
                             Submit for Approval
                         </button>
                     </div>
@@ -269,19 +363,66 @@
                         let awardDate = document.querySelector("input[name='awardDate']").value.trim();
 
                         let submitButton = document.querySelector('.btn-approve button');
+
                         if (cgpa === "" || degreeAward === "" || awardDate === "") {
-                            alert("Please fill in both CGPA and Degree Award fields before submitting.");
+                            alert("Please fill in CGPA, Degree Award, and Award Date fields before submitting.");
                             return false;
                         }
 
+                        // Disable button and show loading state
                         submitButton.disabled = true;
-
                         submitButton.innerHTML =
-                            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Submitting...`;
+                            `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...`;
 
+                        // Set basic form values
                         document.getElementById("cgpaInput").value = cgpa;
                         document.getElementById("degreeAwardInput").value = degreeAward;
                         document.getElementById("awardDateInput").value = awardDate;
+
+                        // Get the container for all address inputs
+                        const container = document.getElementById('addressesContainer');
+                        container.innerHTML = '';
+
+                        // Collect all e-copy addresses
+                        const ecopyAddressFields = document.querySelectorAll('.ecopy-address-field');
+
+                        if (ecopyAddressFields.length > 0) {
+                            // Multiple e-copy addresses exist
+                            ecopyAddressFields.forEach((field) => {
+                                const ecopyId = field.dataset.ecopyId;
+                                const address = field.value.trim();
+
+                                if (ecopyId && address) {
+                                    const hiddenInput = document.createElement('input');
+                                    hiddenInput.type = 'hidden';
+                                    hiddenInput.name = `ecopyAddresses[${ecopyId}]`;
+                                    hiddenInput.value = address;
+                                    container.appendChild(hiddenInput);
+                                }
+                            });
+                        } else {
+                            // Fallback to single e-copy address field
+                            const singleEcopyField = document.getElementById("ecopyAddress");
+                            if (singleEcopyField) {
+                                document.getElementById("ecopyAddressInput").value = singleEcopyField.value.trim();
+                            }
+                        }
+
+                        // Collect all courier addresses
+                        const courierAddressFields = document.querySelectorAll('.courier-address-field');
+
+                        courierAddressFields.forEach((field) => {
+                            const courierId = field.dataset.courierId;
+                            const address = field.value.trim();
+
+                            if (courierId) {
+                                const hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = `courierAddresses[${courierId}]`;
+                                hiddenInput.value = address;
+                                container.appendChild(hiddenInput);
+                            }
+                        });
 
                         return true;
                     }

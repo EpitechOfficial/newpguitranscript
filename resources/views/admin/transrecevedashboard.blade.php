@@ -189,7 +189,9 @@
 
                                         @if ($record->status == 0)
                                             <tr>
-                                                <td>{{ $index + 1 }}</td>
+
+                                                <td>{{ ($records->currentPage() - 1) * $records->perPage() + $index + 1 }}
+                                                </td>
                                                 <td>{{ $record->matric }}</td>
                                                 <td>{{ $record->Surname . ' ' . $record->Othernames }}</td>
                                                 <td>{{ $record->faculty }}</td>
@@ -213,7 +215,7 @@
                                                         View
                                                     </button> --}}
                                                         <a class="btn btn-primary btn-sm"
-                                                            href="{{ route('admin.transcript.details', ['id' => $record->email]) }}"
+                                                            href="{{ route('admin.transcript.details', ['id' => $record->invoiceno]) }}"
                                                             target="_blank">View</a>
 
                                                         @if ($record->file && $record->file->file_path)
@@ -262,6 +264,15 @@
                             </table>
 
 
+                            <div class="d-flex justify-content-between align-items-center mt-4">
+                                <div>
+                                    Showing {{ $records->firstItem() ?? 0 }} to {{ $records->lastItem() ?? 0 }} of
+                                    {{ $records->total() }} entries
+                                </div>
+                                <div>
+                                    {{ $records->links('pagination::bootstrap-5') }}
+                                </div>
+                            </div>
 
                         </div>
                     </nav>
@@ -433,7 +444,7 @@
                             if (awardLink) {
                                 // Create the full URL using asset helper from Laravel
                                 const fileUrl =
-                                `{{ config('app.url') }}/storage/${awardLink}`; // Directly access the public storage path
+                                    `{{ config('app.url') }}/storage/${awardLink}`; // Directly access the public storage path
 
                                 console.log("Generated file URL:", fileUrl); // Log the file URL for debugging
 

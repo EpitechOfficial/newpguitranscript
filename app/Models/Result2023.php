@@ -42,6 +42,11 @@ class Result2023 extends Model
         ->whereNotNull('name')
         ->where('name', '!=', '');
     }
+    public function notify()
+    {
+        return $this->belongsTo(Notify::class, 'user_id', 'user_id')
+        ->whereRaw('YEAR(date) = ?', [date('Y')]);
+    }
     
 
     public function specialization()

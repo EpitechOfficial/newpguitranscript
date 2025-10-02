@@ -46,7 +46,8 @@ class BaseAdminController extends Controller
     protected function getRecordsByStatus($status, $role = null)
     {
         $query = TransDetailsNew::where('status', $status)
-            ->whereRaw('email REGEXP "^[0-9]+$"')
+            ->whereRaw('invoiceno REGEXP "^[0-9]+$"')
+            ->whereRaw('date_requested REGEXP "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"')
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })

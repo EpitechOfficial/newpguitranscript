@@ -21,7 +21,7 @@ class TransInvoiceController extends Controller
         $matric = $user->matric;
 
         $invoiceNumbers = TransDetailsNew::where('matric', $matric)
-            ->pluck('email');
+            ->pluck('invoiceno');
 
 
         $fullNameRecord = TransDetailsNew::where('matric', $matric)->first();
@@ -59,10 +59,10 @@ class TransInvoiceController extends Controller
             $user   = Auth::user();
             $matric = $user->matric;
 
-            // Find the TransDetailsNew record where email is null
+            // Find the TransDetailsNew record where invoiceno is null
             TransDetailsNew::where('matric', $matric)
-                ->where('email', null)
-                ->update(['email' => $trans->invoiceno]);
+                ->where('invoiceno', null)
+                ->update(['invoiceno' => $trans->invoiceno]);
 
             Cart::where('matric', $matric)->delete();
 

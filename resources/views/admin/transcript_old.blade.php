@@ -28,6 +28,56 @@
         .test { display: flex !important; justify-content: space-between !important; }
         table { width: 100% !important; }
         .btn-approve { display: flex !important; justify-content: center !important; }
+
+         .address-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 0.5rem;
+        }
+
+        .address-field {
+            margin-bottom: 1rem;
+        }
+
+        .address-field label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .address-field textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 0.375rem;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .courier-item {
+            background-color: #fff;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 0.375rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .courier-item label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+
+        .courier-item textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            min-height: 70px;
+            resize: vertical;
+        }
     </style>
     <div class="container">
         <div class="page-title">
@@ -97,14 +147,55 @@
 
                     </div>
                 </div>
+                                <!-- Address Section -->
+
+                <div class="address-section">
+
+
+                    @if ($biodataEcopys && $biodataEcopys->count() > 0)
+                        <div class="mb-4">
+                            <h4 class="font-semibold mb-2">E-Copy Addresses:</h4>
+                            @foreach ($biodataEcopys as $index => $ecopyData)
+                                @if ($ecopyData->ecopy_address)
+                                    <div class="courier-item">
+                                        <label for="ecopyAddress{{ $index }}">
+                                            E-Copy Address {{ $index + 1 }}
+                                        </label>
+                                        <textarea id="ecopyAddress{{ $index }}" name="ecopyAddresses[{{ $ecopyData->id }}]" class="ecopy-address-field"
+                                            data-ecopy-id="{{ $ecopyData->id }}" placeholder="Enter e-copy delivery address">{{ $ecopyData->ecopy_address }}</textarea>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($records && $records->couriers && $records->couriers->count() > 0)
+                        <div class="mt-3">
+                            <h4 class="font-semibold mb-2">Courier Addresses:</h4>
+                            @foreach ($records->couriers as $index => $courier)
+                                <div class="courier-item">
+                                    <label for="courierAddress{{ $index }}">
+                                        Courier Address {{ $index + 1 }}
+                                        @if ($courier->name)
+                                            ({{ $courier->name }})
+                                        @endif
+                                    </label>
+                                    <textarea id="courierAddress{{ $index }}" name="courierAddresses[{{ $courier->id }}]"
+                                        class="courier-address-field" data-courier-id="{{ $courier->id }}" placeholder="Enter courier delivery address">{{ $courier->address ?? '' }}</textarea>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
                 <form action="{{ route('admin.transcriptSubmit') }}" method="POST" onsubmit="return validateFormOld()">
                     @csrf
-                    <input type="hidden" name="invoiceNo" value="{{ $records->email }}">
+                    <input type="hidden" name="invoiceNo" value="{{ $records->invoiceno }}">
                     <input type="hidden" name="matric" value="{{ $records->matric }}">
                     <input type="hidden" name="secAdmin" value="{{ $records->sessionadmin }}">
                     <input type="hidden" name="cgpa" id="cgpaInputOld">
                     <input type="hidden" name="degreeAward" id="degreeAwardInputOld">
                     <input type="hidden" name="awardDate" id="awardDateInputOld">
+                    <div id="addressesContainer"></div>
 
                     <div class="btn-approve mt-4">
                         <button type="submit" class="btn-primary text-white px-4 py-2 rounded-md ">
@@ -127,6 +218,52 @@
                         document.getElementById("cgpaInputOld").value = cgpa;
                         document.getElementById("degreeAwardInputOld").value = degreeAward;
                         document.getElementById("awardDateInputOld").value = awardDate;
+
+                          // Get the container for all address inputs
+                        const container = document.getElementById('addressesContainer');
+                        container.innerHTML = '';
+
+                        // Collect all e-copy addresses
+                        const ecopyAddressFields = document.querySelectorAll('.ecopy-address-field');
+
+                        if (ecopyAddressFields.length > 0) {
+                            // Multiple e-copy addresses exist
+                            ecopyAddressFields.forEach((field) => {
+                                const ecopyId = field.dataset.ecopyId;
+                                const address = field.value.trim();
+
+                                if (ecopyId && address) {
+                                    const hiddenInput = document.createElement('input');
+                                    hiddenInput.type = 'hidden';
+                                    hiddenInput.name = `ecopyAddresses[${ecopyId}]`;
+                                    hiddenInput.value = address;
+                                    container.appendChild(hiddenInput);
+                                }
+                            });
+                        } else {
+                            // Fallback to single e-copy address field
+                            const singleEcopyField = document.getElementById("ecopyAddress");
+                            if (singleEcopyField) {
+                                document.getElementById("ecopyAddressInput").value = singleEcopyField.value.trim();
+                            }
+                        }
+
+                        // Collect all courier addresses
+                        const courierAddressFields = document.querySelectorAll('.courier-address-field');
+
+                        courierAddressFields.forEach((field) => {
+                            const courierId = field.dataset.courierId;
+                            const address = field.value.trim();
+
+                            if (courierId) {
+                                const hiddenInput = document.createElement('input');
+                                hiddenInput.type = 'hidden';
+                                hiddenInput.name = `courierAddresses[${courierId}]`;
+                                hiddenInput.value = address;
+                                container.appendChild(hiddenInput);
+                            }
+                        });
+
                         return true;
                     }
                 </script>

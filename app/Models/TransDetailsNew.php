@@ -30,6 +30,7 @@ class TransDetailsNew extends Model
         'thesis_title',
         'feildofinterest',
         'email',
+        'invoiceno',
         'status',
         'ecopy_email',
         'ecopy_address',
@@ -39,7 +40,7 @@ class TransDetailsNew extends Model
 
     public function transInvoice()
 {
-    return $this->hasOne(TransInvoice::class, 'invoiceno', 'email');
+    return $this->hasOne(TransInvoice::class, 'invoiceno', 'invoiceno');
 }
 
 public function course()
@@ -68,7 +69,7 @@ public function transDetailsFiles()
     // Keep the old relationship for backward compatibility
     public function courier()
     {
-        return $this->hasOne(Courier::class, 'invoiceno', 'email');
+        return $this->hasOne(Courier::class, 'invoiceno', 'invoiceno');
     }
 
     // Helper method to get all courier destinations for this transcript

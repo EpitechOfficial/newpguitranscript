@@ -2338,7 +2338,7 @@ hr {
     -webkit-print-color-adjust: exact;
   }
   .tm_accent_color {
-    color: #03182e !important !important;
+    color: #03182e !important;
     -webkit-print-color-adjust: exact;
   }
   .tm_ternary_color {

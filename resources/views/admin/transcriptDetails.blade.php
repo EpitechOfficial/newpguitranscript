@@ -117,6 +117,8 @@
                     <div class="info-container">
                      <strong>Transcript Type:</strong>
                         <span>{{ $record->transInvoice->purpose ?? 'N/A' }}</span>
+                        <strong>Amount:</strong>
+                        <span>{{ $record->transInvoice->dy ?? 'N/A' }}</span>
                         <strong>Number of Copies:</strong>
                         <span>{{ $record->transInvoice->mth ?? 'N/A' }}</span>
                         <strong>E-Copy Destination Email:</strong>
@@ -128,7 +130,7 @@
                         <strong>Phone:</strong>
                         <span>{{ $record->getPrimaryCourier()->phone ?? 'N/A' }}</span>
                         
-                        @if($record->couriers->count() > 1)
+                        @if($record->couriers->count() > 0)
                             <strong>All Courier Destinations:</strong>
                             <span>
                                 @foreach($record->couriers as $index => $courier)
@@ -154,7 +156,7 @@
                         <strong>Uploaded File:</strong>
                         <span>
                         @if ($record->file && $record->file->file_path)
-                                            <a class="btn btn-primary btn-sm" href="/storage/{{ $record->file->file_path }}" target="_blank">View File</a>
+                                            <a class="btn btn-primary btn-sm" href="{{ config('app.url') }}/storage/{{ $record->file->file_path }}" target="_blank">View File</a>
                                         @else
                                             N/A
                                         @endif</span>

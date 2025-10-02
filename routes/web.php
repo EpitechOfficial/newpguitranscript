@@ -1,17 +1,17 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\TransInvoiceController;
-use App\Http\Controllers\GetRecordController;
 use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AdminUserController;
-use App\Http\Controllers\ICTHeadController;
-use App\Http\Controllers\ResultOldController;
-use App\Http\Controllers\AuthenticateController;
-use App\Http\Controllers\StudentsByDepartmentController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\AuthenticateController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GetRecordController;
+use App\Http\Controllers\ICTHeadController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ResultOldController;
+use App\Http\Controllers\StudentsByDepartmentController;
+use App\Http\Controllers\TransInvoiceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -77,7 +77,6 @@ Route::get('admin/dashboard-fo', [AdminLoginController::class, 'dashboardFo'])->
 Route::get('admin/transreceive-dashboard', [AdminLoginController::class, 'transreceiveDashboard'])->name('admin.transrecevedashboard');
 
 //});
-
 
 // Admin Authenticated Routes
 Route::post('/admin/update-cheque', [DashboardController::class, 'updateCheque'])->name('update.cheque');
@@ -152,6 +151,8 @@ Route::middleware(['auth:admin'])->prefix('admin')->name('admin.')->group(functi
 
     // 2025 Ph.D Convocation
     Route::get('/phd-convocation', [\App\Http\Controllers\PhdConvocationController::class, 'form'])->name('phd_convocation.form');
+    Route::get('/phd-convocation/fetch-sessions', [\App\Http\Controllers\PhdConvocationController::class, 'fetchSessions'])
+        ->name('phd_convocation.fetch_sessions');
     Route::post('/phd-convocation/find', [\App\Http\Controllers\PhdConvocationController::class, 'find'])->name('phd_convocation.find');
     Route::post('/phd-convocation/submit', [\App\Http\Controllers\PhdConvocationController::class, 'submit'])->name('phd_convocation.submit');
 
@@ -184,21 +185,14 @@ Route::middleware(['auth:admin'])->prefix('admin/icthead')->name('admin.icthead.
     Route::post('/users/{id}/toggle', [ICTHeadController::class, 'toggleStatus'])->name('users.toggle');
 });
 
-
 //Route::view('/register', 'register')->name('register');
-
-
 
 Route::get('/register', [AuthenticateController::class, 'create'])->name('authenticate.create');
 Route::post('/register', [AuthenticateController::class, 'store'])->name('authenticate.store');
 
-
-
 // input result
 Route::get('/result-old/upload', [ResultOldController::class, 'uploadForm'])->name('result_old.upload_form');
 Route::post('/result-old/upload', [ResultOldController::class, 'uploadExcel'])->name('result_old.upload_excel');
-
-
 
 // Show the admin login page
 // Route::get('admin/login', [AdminLoginController::class, 'index'])->name('login');

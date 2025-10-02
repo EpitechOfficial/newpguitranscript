@@ -36,7 +36,6 @@
     <!-- Template Base Styles Start -->
     <link rel="stylesheet" href="{{ asset('css/styles.css') }}" />
     <!-- Template Base Styles End -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.min.css">
 
     <style>
@@ -58,6 +57,9 @@
         .white {
             background: #fff !important;
             color: #0a2b4f !important;
+        }
+        .mb-5{
+            margin-top: 3rem !important;
         }
     </style>
 
@@ -109,7 +111,7 @@
                 <!-- Menu Start -->
                 <div class="menu-container flex-grow-1">
                     @php
-                        $role = (session('admin_user')->role) ?? null;
+                        $role = session('admin_user')->role ?? null;
                         $mass = true; // Assuming mass transcript is available for all roles
                     @endphp
 
@@ -122,111 +124,125 @@
                             </a>
                         </li> --}}
 
-                        @if($role == 2) {{-- TO Role --}}
-                        <li>
-                            <a href="{{ route('admin.dashboard.to') }}" data-href="#">
-                                <i data-acorn-icon="file-text" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Transcript Officer</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        @if($role == 3) {{-- KI Role --}}
-                        <li>
-                            <a href="{{ route('admin.dashboard.ki') }}" data-href="#">
-                                <i data-acorn-icon="inbox" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Key-In Request</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        @if($role == 4) {{-- PO Role --}}
-                        <li>
-                            <a href="{{ route('admin.dashboard_po') }}" data-href="#">
-                                <i data-acorn-icon="settings" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Processing Officer</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        @if($role == 5) {{-- FO Role --}}
-                        <li>
-                            <a href="{{ route('admin.dashboard.fo') }}" data-href="#">
-                                <i data-acorn-icon="check-circle" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Filing Officer</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        @if($role == 6) {{-- Transreceive Role --}}
-                        <li>
-                            <a href="{{ route('admin.transrecevedashboard') }}" data-href="#">
-                                <i data-acorn-icon="inbox" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Transcript Request</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        @if($role == 7) {{-- Record Processed Role --}}
-                        <li>
-                            <a href="{{ route('admin.recordProcesseds') }}" data-href="#">
-                                <i data-acorn-icon="home" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Record Processed</span>
-                            </a>
-                        </li>
-                        @endif
-
-                        <!-- Common menu items for all roles -->
-                        @if($role == 7 || $role == 2) {{-- Record Processed and Approved roles --}}
-                        <li>
-                            <a href="{{ route('admin.recordApproved') }}" data-href="#">
-                                <i data-acorn-icon="check" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Approved Record</span>
-                            </a>
-                        </li>
+                        @if ($role == 2)
+                            {{-- TO Role --}}
+                            <li>
+                                <a href="{{ route('admin.dashboard.to') }}" data-href="#">
+                                    <i data-acorn-icon="file-text" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Transcript Officer</span>
+                                </a>
+                            </li>
                         @endif
 
                         @if ($role == 3)
-                        
-                        <!-- Upload Result - KI -->
-                        <li>
-                            <a href="{{ route('result_old.upload_form') }}" data-href="#">
-                                <i data-acorn-icon="keyboard" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Upload Result</span>
-                            </a>
-                        </li>
+                            {{-- KI Role --}}
+                            <li>
+                                <a href="{{ route('admin.dashboard.ki') }}" data-href="#">
+                                    <i data-acorn-icon="inbox" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Key-In Request</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        @if ($role == 4)
+                            {{-- PO Role --}}
+                            <li>
+                                <a href="{{ route('admin.dashboard_po') }}" data-href="#">
+                                    <i data-acorn-icon="settings" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Processing Officer</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        @if ($role == 5)
+                            {{-- FO Role --}}
+                            <li>
+                                <a href="{{ route('admin.dashboard.fo') }}" data-href="#">
+                                    <i data-acorn-icon="check-circle" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Filing Officer</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        @if ($role == 6)
+                            {{-- Transreceive Role --}}
+                            <li>
+                                <a href="{{ route('admin.transrecevedashboard') }}" data-href="#">
+                                    <i data-acorn-icon="inbox" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Transcript Request</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        @if ($role == 7)
+                            {{-- Record Processed Role --}}
+                            <li>
+                                <a href="{{ route('admin.recordProcesseds') }}" data-href="#">
+                                    <i data-acorn-icon="home" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Record Processed</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        <!-- Common menu items for all roles -->
+                        @if ($role == 7 || $role == 2)
+                            {{-- Record Processed and Approved roles --}}
+                            <li>
+                                <a href="{{ route('admin.recordApproved') }}" data-href="#">
+                                    <i data-acorn-icon="check" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Approved Record</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        @if ($role == 3)
+                            <!-- Upload Result - KI -->
+                            <li>
+                                <a href="{{ route('result_old.upload_form') }}" data-href="#">
+                                    <i data-acorn-icon="keyboard" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Upload Result</span>
+                                </a>
+                            </li>
                         @endif
 
                         <!-- Edit Result - Available to specific roles -->
-                        @if(in_array($role, [3, 2, 6, 7])) {{-- KI, PO, Help, FO roles --}}
-                        <li>
-                            <a href="{{ route('admin.edit_transcript_realtime') }}" data-href="#">
-                                <i data-acorn-icon="edit" class="icon" data-acorn-size="18"></i>
-                                <span class="label">Edit/View Result</span>
-                            </a>
-                        </li>
+                        @if (in_array($role, [3, 2, 6, 7]))
+                            {{-- KI, PO, Help, FO roles --}}
+                            <li>
+                                <a href="{{ route('admin.edit_transcript_realtime') }}" data-href="#">
+                                    <i data-acorn-icon="edit" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">Edit/View Result</span>
+                                </a>
+                            </li>
                         @endif
 
                         @if ($mass && ($role == 7 || $role == 2))
-                        
-                        <!-- Students by Department - Available to all roles -->
-                        <li>
-                            <a href="{{ route('admin.students_by_department') }}" data-href="#">
-                                <i data-acorn-icon="print" class="icon" data-acorn-size="18"></i>
-                                <span class="label">2025 Convocation</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.phd_convocation.form') }}" data-href="#">
-                                <i data-acorn-icon="book-open" class="icon" data-acorn-size="18"></i>
-                                <span class="label">2025 Ph.D Convocation</span>
-                            </a>
-                        </li>
+                            <!-- Students by Department - Available to all roles -->
+                            <li>
+                                <a href="{{ route('admin.students_by_department') }}" data-href="#">
+                                    <i data-acorn-icon="print" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">2025 Convocation</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('admin.phd_convocation.form') }}" data-href="#">
+                                    <i data-acorn-icon="book-open" class="icon" data-acorn-size="18"></i>
+                                    <span class="label">2025 Ph.D Convocation</span>
+                                </a>
+                            </li>
                         @endif
 
-                     
+                        <li class="mb-5">
 
+                            <form method="post" action="{{ route('admin.logout') }}" class="nav-link">
+                                @csrf
+                                <button class="trash logout" type="submit" name="logout">
+                                    <i data-acorn-icon="logout" class="icon" data-acorn-size="18"></i>Logout
+                                </button>
+                            </form>
+                        </li>
                     </ul>
+
                 </div>
                 <!-- Menu End -->
 
@@ -301,7 +317,7 @@
                     {{-- <button class="trash logout" type="submit" name="logout">
                             <i class="fas fa-sign-out-alt"></i>Logout
                         </button> --}}
-                    </form>
+
 
 
 
@@ -359,6 +375,9 @@
     <script src="{{ asset('js/common.js') }}"></script>
     <script src="{{ asset('js/scripts.js') }}"></script>
     <!-- Page Specific Scripts End -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
+
 </body>
 
 </html>

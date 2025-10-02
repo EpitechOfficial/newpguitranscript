@@ -12,40 +12,44 @@
             <div class="card-body">
                 <h2 class="text-2xl font-bold mb-4">Candidate</h2>
                 <div class="grid grid-cols-2 gap-4">
-                    <p><strong>Name:</strong> {{ ($student->Othernames ?? 'N/A') . ' ' . ($student->Surname ?? '') }}</p>
+                    <p><strong>Name:</strong> {{ ($student->Othernames ?? 'N/A') . ' ' . ($student->Surname ?? '') }}
+                    </p>
                     <p><strong>Gender:</strong> {{ $gender ?? ($student->sex ?? 'N/A') }}</p>
                     <p><strong>Matric Number:</strong> {{ $student->matric }}</p>
-                    <p><strong>Session Admitted:</strong> {{ $student->sessionadmin ?? ($results->first()->sec ?? $results->first()->yr_of_entry ?? 'N/A') }}</p>
-                    <p><strong>Faculty:</strong> {{ $student->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}</p>
-                    <p><strong>Department:</strong> {{ $student->department ?? ($results->first()->department->department ?? 'N/A') }}</p>
+                    
+                    <p><strong>Faculty:</strong>
+                        {{ $student->faculty ?? ($results->first()->faculty->faculty ?? 'N/A') }}</p>
+                    <p><strong>Department:</strong>
+                        {{ $student->department ?? ($results->first()->department->department ?? 'N/A') }}</p>
                 </div>
-                <hr>
 
-                @if ($results->isNotEmpty())
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse border border-gray-300">
-                        <thead>
-                            <tr class="bg-dark">
-                                <th class="border p-2">Course Code</th>
-                                <th class="border p-2">Course Title</th>
-                                <th class="border p-2">Units</th>
-                                <th class="border p-2">Status</th>
-                                <th class="border p-2">Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($results as $result)
-                                <tr class="border">
-                                    <td class="border p-2">{{ $result->course->course_code ?? ($result->code ?? 'N/A') }}</td>
-                                    <td class="border p-2">{{ $result->course->course_title ?? 'N/A' }}</td>
-                                    <td class="border p-2">{{ $result->c_unit ?? ($result->cunit ?? 'N/A') }}</td>
-                                    <td class="border p-2">{{ $result->status ?? ($result->cstatus ?? 'N/A') }}</td>
-                                    <td class="border p-2">{{ $result->score }}</td>
+
+                <!-- Results table section -->
+                @if (!empty($results))
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border border-gray-300">
+                            <thead>
+                                <tr class="bg-dark">
+                                    <th class="border p-2">Course Code</th>
+                                    <th class="border p-2">Course Title</th>
+                                    <th class="border p-2">Units</th>
+                                    <th class="border p-2">Status</th>
+                                    <th class="border p-2">Score</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @foreach ($results as $result)
+                                    <tr class="border">
+                                        <td class="border p-2">{{ $result['code'] ?? 'N/A' }}</td>
+                                        <td class="border p-2">{{ $result['course_title'] ?? 'N/A' }}</td>
+                                        <td class="border p-2">{{ $result['c_unit'] ?? 'N/A' }}</td>
+                                        <td class="border p-2">{{ $result['status'] ?? 'N/A' }}</td>
+                                        <td class="border p-2">{{ $result['score'] ?? 'N/A' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 @endif
 
                 <hr>
@@ -55,36 +59,53 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="font-semibold block">Surname</label>
-                            <input type="text" name="surname" value="{{ $student->Surname }}" class="form-control">
+                            <input type="text" name="surname" value="{{ $student->Surname }}" class="form-control" required>
                         </div>
                         <div>
                             <label class="font-semibold block">Othernames</label>
-                            <input type="text" name="othernames" value="{{ $student->Othernames }}" class="form-control">
+                            <input type="text" name="othernames" value="{{ $student->Othernames }}"
+                                class="form-control" required>
                         </div>
                         <div>
                             <label class="font-semibold block">Sex</label>
-                            <input type="text" name="sex" value="{{ $student->sex }}" class="form-control">
+                            
+                            <select name="sex" class="form-control" required>
+    <option value="" >Select Gender</option>
+    <option value="Male" {{ (isset($student->sex) && $student->sex == 'Male') ? 'selected' : '' }}>Male</option>
+    <option value="Female" {{ (isset($student->sex) && $student->sex == 'Female') ? 'selected' : '' }}>Female</option>
+</select>
+
+                        </div>
+                       
+                        <div>
+                            <label class="font-semibold block">Faculty</label>
+                            <input type="text" name="faculty" value="{{ $student->faculty }}" class="form-control"
+                                required>
                         </div>
                         <div>
-                            <label class="font-semibold block">Session Admitted</label>
-                            <input type="text" name="sessionadmin" value="{{ $student->sessionadmin ?? ($results->first()->sec ?? $results->first()->yr_of_entry) }}" class="form-control" required>
+                            <label class="font-semibold block">Department</label>
+                            <input type="text" name="department" value="{{ $student->department }}"
+                                class="form-control" required>
                         </div>
-                        <div>
-                            <label class="font-semibold block">Faculty Id</label>
-                            <input type="text" name="faculty" value="{{ $student->faculty }}" class="form-control" required>
-                        </div>
-                        <div>
-                            <label class="font-semibold block">Department Id</label>
-                            <input type="text" name="department" value="{{ $student->department }}" class="form-control" required>
-                        </div>
+
                         <div>
                             <label class="font-semibold block">Degree Awarded</label>
-                            <input type="text" name="degree_awarded" value="{{ $degreeAwarded ?? 'Doctor of Philosophy' }}" class="form-control" required>
+                            <input type="text" name="degree_awarded"
+                                value="{{ $degreeAwarded ?? 'Doctor of Philosophy' }}" class="form-control" required>
                         </div>
                         <div>
                             <label class="font-semibold block">Date of Award</label>
-                            <input type="text" name="award_date" value="{{ $dateAward ?? '' }}" class="form-control" required>
+                            <input type="text" name="award_date" value="{{ $dateAward ? \Carbon\Carbon::parse($dateAward)->format('j F, Y') : '' }}"  class="form-control"
+                                required>
                         </div>
+
+                        @if (!empty($results))
+                            <div>
+                                <label class="font-semibold block">CGPA</label>
+                                <input type="text" name="cgpa" value="{{ $cgpa ?? 'N/A' }}" class="form-control"
+                                    required>
+                            </div>
+                        @endif
                     </div>
                     <div class="mt-3">
                         <label class="font-semibold block">Thesis Title</label>
@@ -98,4 +119,3 @@
         </div>
     </div>
 </x-admin-layout>
-

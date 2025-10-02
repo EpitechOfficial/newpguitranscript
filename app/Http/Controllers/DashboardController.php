@@ -468,7 +468,7 @@ class DashboardController extends Controller
     public function adminDashboard()
     {
         $records = TransDetailsNew::where('status', 0)
-            ->whereRaw('email REGEXP "^[0-9]+$"')
+            ->whereRaw('invoiceno REGEXP "^[0-9]+$"')
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
@@ -485,7 +485,7 @@ class DashboardController extends Controller
     {
 
         $records = TransDetailsNew::where('status', 2)
-            ->whereRaw('email REGEXP "^[0-9]+$"')
+            ->whereRaw('invoiceno REGEXP "^[0-9]+$"')
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
@@ -607,18 +607,28 @@ class DashboardController extends Controller
             $startYear = intval($matches[1]);
             $endYear   = intval($matches[2]);
 
-            $biodata = StudentRecord::where('matric', $matric)->first();
-            $biodataN = TransDetailsNew::where('matric', $matric)->first();
+            $biodata  = StudentRecord::where('matric', $matric)->first();
+            $biodataN = TransDetailsNew::where('matric', $matric)->whereRaw('date_requested REGEXP "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"')
+                ->first();
             if (! $biodata) {
                 Log::error('No StudentRecord found for matric: ' . $matric);
             }
             $normalizedSecAdmin = preg_replace('/\/20(\d{2})$/', '/$1', $sessionAdmin);
 
-            $biodata = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
+            $biodata = TransDetailsNew::with('couriers')->where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('invoiceno', $invoiceNo)->whereRaw('date_requested REGEXP "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"')
+                ->first();
+            $biodataEcopys = TransDetailsNew::with('couriers')
+                ->where('matric', $matric)
+                ->where('sessionadmin', $sessionAdmin)
+                ->where('invoiceno', $invoiceNo)
+                ->whereNotNull('ecopy_address')
+                ->whereRaw('date_requested REGEXP "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"')
+                ->get();
+
             Log::info('biodata: ' . $biodata);
-            $gender = $biodata->sex ?? 'N/A';
+            $gender      = $biodata->sex ?? 'N/A';
             $thesisTitle = $biodataN->thesis_title ?? 'Not Specified';
-            $dateAward = $biodataN->dateAward ?? 'Not Specified';
+            $dateAward   = $biodataN->dateAward ?? 'Not Specified';
 
             $results = Result2023::with('course') // Eager load the 'course' relationship
                 ->with(['faculty', 'department'])
@@ -653,7 +663,8 @@ class DashboardController extends Controller
                 //$biodata = Biodata::where('matric', $matric)->first();
                 $degreeAwarded = 'Not Specified';
                 $cgpa          = 'N/A';
-                $biodata       = TransDetailsNew::where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('email', $invoiceNo)->first();
+                $biodata       = TransDetailsNew::with('couriers')->where('matric', $matric)->where('sessionadmin', $sessionAdmin)->where('invoiceno', $invoiceNo)->whereRaw('date_requested REGEXP "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"')
+                    ->first();
 
                 // Try fetching from Result2018 first
                 $results = Result2018::with('course')
@@ -667,9 +678,11 @@ class DashboardController extends Controller
 
                 if ($inComplete) {
                     // If Result2018 is empty, fallback to ResultOld
-                    $records = TransDetailsNew::where('matric', $matric)
+                    $records = TransDetailsNew::with('couriers')->where('matric', $matric)
                         ->where('sessionadmin', $sessionAdmin)
-                        ->where('email', $invoiceNo)
+                        ->where('invoiceno', $invoiceNo)
+                        ->whereRaw('date_requested REGEXP "^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$"')
+
                         ->first();
 
                     $results = ResultOld::where('matno', $matric)
@@ -680,31 +693,30 @@ class DashboardController extends Controller
                     $biodata = $records;
                     Log::info('Raw degree value: "' . $biodata->degree . '"');
 
-// Then use the correct comparison
                     if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
                         Log::info('Rendering higher degree transcript view');
-                        return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward'));
+                        return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward', 'biodataEcopys'));
                     }
 
                     Log::info('Rendering old transcript view');
-                    return view('admin.transcript_old', compact('records', 'results'));
+                    return view('admin.transcript_old', compact('records', 'results', 'degreeAwarded', 'cgpa', 'biodataEcopys'));
                 }
 
                 if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
                     Log::info('Rendering higher degree transcript view');
-                    return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward'));
+                    return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward', 'biodataEcopys'));
                 }
 
                 Log::info('Rendering 2018 transcript view');
-                return view('admin.transcript', compact('biodata', 'results', 'gender'));
+                return view('admin.transcript', compact('biodata', 'results', 'gender', 'degreeAwarded', 'cgpa', 'biodataEcopys'));
             }
 
             if ($biodata->degree && in_array($biodata->degree, ['Ph.D', 'M.Phil', 'P.hd', 'M.phil'])) {
                 Log::info('Rendering higher degree transcript view');
-                return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward'));
+                return view('admin.transcriptHigher', compact('biodata', 'results', 'degreeAwarded', 'cgpa', 'gender', 'thesisTitle', 'dateAward', 'biodataEcopys'));
             }
             Log::info('Rendering 2023 transcript view');
-            return view('admin.transcript', compact('biodata', 'results', 'gender', 'degreeAwarded', 'cgpa'));
+            return view('admin.transcript', compact('biodata', 'results', 'gender', 'degreeAwarded', 'cgpa', 'biodataEcopys'));
 
             // // **CGPA Calculation (for 2013 and above)**
             // $totalGradePoints = 0;
@@ -1030,37 +1042,143 @@ class DashboardController extends Controller
 
             // Validate input
             $request->validate([
-                'matric'      => 'required',
-                'invoiceNo'   => 'required',
-                'secAdmin'    => 'required',
-                'cgpa'        => 'required|numeric|min:0',
-                'degreeAward' => 'required|string|max:255',
-                'awardDate'   => 'required|string|max:255',
+                'matric'             => 'required',
+                'invoiceNo'          => 'required',
+                'secAdmin'           => 'required',
+                'cgpa'               => 'required|numeric|min:0',
+                'degreeAward'        => 'required|string|max:255',
+                'awardDate'          => 'required|string|max:255',
+                'ecopyAddress'       => 'nullable|string',
+                'ecopyAddresses'     => 'nullable|array',
+                'ecopyAddresses.*'   => 'nullable|string',
+                'courierAddresses'   => 'nullable|array',
+                'courierAddresses.*' => 'nullable|string',
             ]);
+
+            DB::beginTransaction();
 
             // Normalize session admin value
             $normalizedSecAdmin = preg_replace('/\/(\d{2})$/', '/20$1', $request->secAdmin);
 
-            // Update all matching transcript records
-            $affectedRows = TransDetailsNew::where('email', $request->invoiceNo)
+            // Get the record(s) before updating
+            $transcriptRecords = TransDetailsNew::where('invoiceno', $request->invoiceNo)
                 ->where('matric', $request->matric)
                 ->where('sessionadmin', $normalizedSecAdmin)
-                ->update([
-                    'award'     => $request->cgpa,
-                    'programme' => $request->degreeAward,
-                    'dateAward' => $request->awardDate,
-                    'status'    => 7,
-                ]);
+                ->get();
 
-            if ($affectedRows === 0) {
+            if ($transcriptRecords->isEmpty()) {
+                DB::rollBack();
                 return back()->with('error', 'No transcript records found to update.');
             }
 
-            Log::info("Updated {$affectedRows} transcript record(s)");
+            // Determine if we're using multiple e-copy addresses or single
+            $useMultipleEcopy = ! empty($request->ecopyAddresses) && is_array($request->ecopyAddresses);
 
-            return redirect()->route('admin.dashboard.to')->with('success', "Successfully updated {$affectedRows} transcript record(s) for approval.");
+            if ($useMultipleEcopy) {
+                // Update each transcript record with its corresponding e-copy address
+                $updatedCount = 0;
+
+                foreach ($request->ecopyAddresses as $recordId => $ecopyAddress) {
+                    $affectedRows = TransDetailsNew::where('id', $recordId)
+                        ->where('invoiceno', $request->invoiceNo)
+                        ->where('matric', $request->matric)
+                        ->where('sessionadmin', $normalizedSecAdmin)
+                        ->update([
+                            'award'         => $request->cgpa,
+                            'programme'     => $request->degreeAward,
+                            'dateAward'     => $request->awardDate,
+                            'ecopy_address' => trim($ecopyAddress),
+                            'status'        => 7,
+                        ]);
+
+                    $updatedCount += $affectedRows;
+
+                    if ($affectedRows > 0) {
+                        Log::info("Updated transcript record ID {$recordId} with e-copy address");
+                    }
+                }
+
+                // Update any remaining records that don't have specific e-copy addresses
+                $updatedRecordIds = array_keys($request->ecopyAddresses);
+                $remainingRecords = TransDetailsNew::where('invoiceno', $request->invoiceNo)
+                    ->where('matric', $request->matric)
+                    ->where('sessionadmin', $normalizedSecAdmin)
+                    ->whereNotIn('id', $updatedRecordIds)
+                    ->update([
+                        'award'     => $request->cgpa,
+                        'programme' => $request->degreeAward,
+                        'dateAward' => $request->awardDate,
+                        'status'    => 7,
+                    ]);
+
+                $updatedCount += $remainingRecords;
+                $affectedRows = $updatedCount;
+
+            } else {
+                // Single e-copy address for all records (backward compatibility)
+                $affectedRows = TransDetailsNew::where('invoiceno', $request->invoiceNo)
+                    ->where('matric', $request->matric)
+                    ->where('sessionadmin', $normalizedSecAdmin)
+                    ->update([
+                        'award'         => $request->cgpa,
+                        'programme'     => $request->degreeAward,
+                        'dateAward'     => $request->awardDate,
+                        'ecopy_address' => $request->ecopyAddress,
+                        'status'        => 7,
+                    ]);
+            }
+
+            // Update courier addresses if provided
+            if (! empty($request->courierAddresses) && is_array($request->courierAddresses)) {
+                $courierUpdateCount = 0;
+
+                foreach ($transcriptRecords as $record) {
+                    // Load the couriers relationship for each record
+                    $record->load('couriers');
+
+                    foreach ($request->courierAddresses as $courierId => $address) {
+                        // Update existing courier record
+                        $courier = Courier::where('id', $courierId)
+                            ->where('trans_details_id', $record->id)
+                            ->first();
+
+                        if ($courier) {
+                            $courier->update([
+                                'address'    => trim($address),
+                                'updated_at' => now(),
+                            ]);
+
+                            $courierUpdateCount++;
+                            Log::info("Updated courier ID {$courierId} for trans_details_id {$record->id}");
+                        } else {
+                            Log::warning("Courier ID {$courierId} not found for trans_details_id {$record->id}");
+                        }
+                    }
+                }
+
+                Log::info("Updated {$courierUpdateCount} courier address(es)");
+            }
+
+            DB::commit();
+
+            $ecopyCount   = $useMultipleEcopy ? count($request->ecopyAddresses) : ($request->ecopyAddress ? 1 : 0);
+            $courierCount = count($request->courierAddresses ?? []);
+
+            Log::info("Successfully updated {$affectedRows} transcript record(s) with {$ecopyCount} e-copy address(es) and {$courierCount} courier address(es)");
+
+            return redirect()->route('admin.dashboard.to')
+                ->with('success', "Successfully updated {$affectedRows} transcript record(s) for approval.");
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('Validation error: ' . json_encode($e->errors()));
+            return back()->withErrors($e->errors())->withInput();
+
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Error submitting transcript: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
             return back()->with('error', 'An error occurred while submitting the transcript. Please try again.');
         }
     }
@@ -1086,7 +1204,7 @@ class DashboardController extends Controller
             $normalizedSecAdmin = preg_replace('/\/(\d{2})$/', '/20$1', $request->secAdmin);
 
             // Update all matching transcript records
-            $affectedRows = TransDetailsNew::where('email', $request->invoiceNo)
+            $affectedRows = TransDetailsNew::where('invoiceno', $request->invoiceNo)
                 ->where('matric', $request->matric)
                 ->where('sessionadmin', $normalizedSecAdmin)
                 ->update([
@@ -1289,7 +1407,7 @@ class DashboardController extends Controller
     public function recordProcessed()
     {
         $records = TransDetailsNew::where('status', 7)
-            ->whereRaw('email REGEXP "^[0-9]+$"')
+            ->whereRaw('invoiceno REGEXP "^[0-9]+$"')
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
@@ -1304,7 +1422,7 @@ class DashboardController extends Controller
     public function recordApproved()
     {
         $records = TransDetailsNew::where('status', 8)
-            ->whereRaw('email REGEXP "^[0-9]+$"')
+            ->whereRaw('invoiceno REGEXP "^[0-9]+$"')
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })
@@ -1323,7 +1441,7 @@ class DashboardController extends Controller
     {
 
         $matric  = session('matric');
-        $records = TransDetailsNew::where('matric', $matric)->whereRaw('email REGEXP "^[0-9]+$"')
+        $records = TransDetailsNew::where('matric', $matric)->whereRaw('invoiceno REGEXP "^[0-9]+$"')
             ->whereHas('transInvoice', function ($query) {
                 $query->whereColumn('amount_charge', 'amount_paid');
             })->with([
